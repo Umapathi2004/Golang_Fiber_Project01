@@ -25,7 +25,7 @@ func main() {
 	case "drs_temp":
 		services.UpdateDRSTemp()
 	case "in_mft":
-		services.In_mft()
+		services.UpdateInCommingManifest()
 	default:
 		fmt.Println("Invalid Service")
 	}
