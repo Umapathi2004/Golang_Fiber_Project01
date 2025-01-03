@@ -1,17 +1,19 @@
 package config
 
 import (
-	"github.com/joho/godotenv"
+	"GoFiber_Project01/logs"
 	"os"
-	"log"
+
+	"github.com/joho/godotenv"
 )
 
 var Config map[string]interface{}
 
-func init() {
+func Init() {
+	logs.Logger()
 	err := godotenv.Load(".env")
 	if err != nil {
-	  log.Fatalf("Error loading .env file")
+		logs.ErrorLog.Printf("Error loading .env file\n")
 	}
 
 	Base_URL := os.Getenv("BASE_URL")

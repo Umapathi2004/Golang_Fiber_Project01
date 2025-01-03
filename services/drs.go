@@ -4,8 +4,8 @@ import (
 	"GoFiber_Project01/DBConnection"
 	"GoFiber_Project01/api_request"
 	"GoFiber_Project01/config"
+	"GoFiber_Project01/logs"
 	"context"
-	"fmt"
 	"log"
 	"time"
 
@@ -19,6 +19,9 @@ func UpdateDRS() error {
 		docIndex       int
 		totalDocs      int
 	)
+	logs.Logger()
+	config.Init()
+	DBConnection.DBConfig()
 	configration := config.Config
 	db := DBConnection.DB
 	MongoClient := DBConnection.MongoClient
@@ -68,13 +71,15 @@ func UpdateDRS() error {
 
 	cursor, err := db.Collection(collectionName).Find(context.Background(), query)
 	if err != nil {
-		return fmt.Errorf("failed to query documents: %v", err)
+		logs.ErrorLog.Printf("failed to query documents: %v\n", err)
+		return nil
 	}
 	defer cursor.Close(context.Background())
 
 	var data []bson.M
 	if err := cursor.All(context.Background(), &data); err != nil {
-		return fmt.Errorf("failed to parse documents: %v", err)
+		logs.ErrorLog.Printf("failed to parse documents: %v\n", err)
+		return nil
 	}
 	totalDocs = len(data)
 	log.Printf("Found %d docs", totalDocs)
@@ -96,10 +101,11 @@ func UpdateDRS() error {
 					},
 				})
 				if err != nil || updateResult.ModifiedCount != 1 {
-					log.Printf("Failed to update document: %v", doc["cno"])
+					log.Printf("Failed to update document: %v\n", doc["cno"])
+					continue
 				} else {
 					successCount++
-					log.Printf("%d/%d - %v updated to the local DB", docIndex, totalDocs, doc["cno"])
+					logs.SuccessLog.Printf("%d/%d - %v updated to the local DB\n", docIndex, totalDocs, doc["cno"])
 				}
 			} else {
 				retry := 0
@@ -114,7 +120,8 @@ func UpdateDRS() error {
 					options.Update().SetUpsert(true),
 				)
 				if err != nil {
-					log.Printf("Failed to update document: %v", doc["cno"])
+					logs.ErrorLog.Printf("Failed to update document: %v\n", doc["cno"])
+					continue
 				}
 			}
 		}
@@ -128,12 +135,13 @@ func UpdateDRS() error {
 		"successDocs": successCount,
 	}
 	if _, err := db.Collection("main_server_update").InsertOne(context.Background(), bson.M(stat)); err != nil {
-		return fmt.Errorf("failed to insert stats: %v", err)
+		logs.ErrorLog.Printf("failed to insert stats: %v\n", err)
 	}
 	return nil
 }
 
 func getDrsUrl(r bson.M) map[string]interface{} {
+	config.Init()
 	configration := config.Config
 	if r["cno"] == nil {
 		return nil
@@ -147,28 +155,28 @@ func getDrsUrl(r bson.M) map[string]interface{} {
 
 	param := map[string]interface{}{
 		"SYS_DT":    dt.Format("01-02-2006"),
-		"ORIGIN":    configration["branchCode"],
-		"DESTN":     configration["branchCode"],
+		"ORIGIN":    configration["branchCode"].(string),
+		"DESTN":     configration["branchCode"].(string),
 		"SYS_TM":    dt.Format("15:04"),
 		"REMARKS":   "DE",
 		"DRSNO":     r["txn_id"],
 		"TYPEOFDOC": "INBOUND",
 		"POD_NO":    r["cno"],
-		"CC": func() string {
+		"CC": func() any {
 			if r["pccode"] != nil {
-				return r["pccode"].(string)
+				return r["pccode"]
 			}
 			return "PC00"
 		}(),
-		"CONSIGNEE": func() string {
+		"CONSIGNEE": func() any {
 			if r["customer_address"] != nil {
-				return r["customer_address"].(string)
+				return r["customer_address"]
 			}
 			return ""
 		}(),
-		"PHNO": func() string {
+		"PHNO": func() any {
 			if r["customer_mobile"] != nil {
-				return r["customer_mobile"].(string)
+				return r["customer_mobile"]
 			}
 			return ""
 		}(),
@@ -180,27 +188,27 @@ func getDrsUrl(r bson.M) map[string]interface{} {
 		"RECPS":     "",
 		"STAMP":     "",
 		"SLNO":      1,
-		"WEIGHT": func() float64 {
+		"WEIGHT": func() any {
 			if r["weight"] != nil {
-				return r["weight"].(float64)
+				return r["weight"]
 			}
 			return 0.100
 		}(),
-		"CODAMOUNT": func() float64 {
+		"CODAMOUNT": func() any {
 			if r["cod_amount"] != nil {
-				return r["cod_amount"].(float64)
+				return r["cod_amount"]
 			}
 			return 0.00
 		}(),
-		"PIECES": func() int {
+		"PIECES": func() any {
 			if r["pieces"] != nil {
-				return r["pieces"].(int)
+				return r["pieces"]
 			}
 			return 1
 		}(),
-		"userid":    configration["branchCode"],
-		"xmlorigin": configration["branchCode"],
-		"id":        configration["loginId"],
+		"userid":    configration["branchCode"].(string),
+		"xmlorigin": configration["branchCode"].(string),
+		"id":        configration["loginId"].(int16),
 	}
 
 	return param

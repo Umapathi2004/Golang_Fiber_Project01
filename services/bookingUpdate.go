@@ -4,6 +4,7 @@ import (
 	"GoFiber_Project01/DBConnection"
 	"GoFiber_Project01/api_request"
 	"GoFiber_Project01/config"
+	"GoFiber_Project01/logs"
 	"context"
 	"log"
 	"time"
@@ -24,6 +25,9 @@ func UpdateBookingConsignment() error {
 		totalDocs      int
 		successCount   int
 	)
+	logs.Logger()
+	config.Init()
+	DBConnection.DBConfig()
 	configration := config.Config
 	db := DBConnection.DB
 	MongoClient := DBConnection.MongoClient
@@ -33,7 +37,7 @@ func UpdateBookingConsignment() error {
 		query := bson.M{"_id": customerCode}
 
 		if err := db.Collection("customer").FindOne(context.Background(), query).Decode(&customer); err != nil {
-			log.Printf("Error finding customer with code %s: %v", customerCode, err)
+			logs.ErrorLog.Printf("Error finding customer with code %s: %v\n", customerCode, err)
 			continue
 		}
 
@@ -45,30 +49,25 @@ func UpdateBookingConsignment() error {
 
 		cursor, err := db.Collection(collectionName).Find(context.Background(), query)
 		if err != nil {
-			log.Printf("Error finding documents for customer %s: %v", customerCode, err)
+			logs.ErrorLog.Printf("Error finding documents for customer %s: %v\n", customerCode, err)
 			continue
 		}
 		defer cursor.Close(context.Background())
 
 		var data []bson.M
 		if err := cursor.All(context.Background(), &data); err != nil {
-			log.Printf("Error reading cursor for customer %s: %v", customerCode, err)
+			logs.ErrorLog.Printf("Error reading cursor for customer %s: %v\n", customerCode, err)
 			continue
 		}
 		totalDocs = len(data)
 		log.Printf("Customer %s: Found %d documents", customerCode, totalDocs)
 
-		successCount = 0
 		for idx, doc := range data {
 			param := getBookingUpdateUrl(doc)
 			if param != nil {
 				docIndex = idx + 1
 				log.Printf("%d/%d - Processing CNo: %v", docIndex, totalDocs, doc["cno"])
-				bookingUpdateUrl, ok := configration["bookingUpdateUrl"].(string)
-				if !ok {
-					log.Printf("Invalid bookingUpdateUrl in configuration")
-					continue
-				}
+				bookingUpdateUrl, _ := configration["bookingUpdateUrl"].(string)
 
 				result := api_request.SendData("Booking Info", bookingUpdateUrl, param, doc)
 				if result["success"] == true {
@@ -78,10 +77,10 @@ func UpdateBookingConsignment() error {
 						bson.M{"$set": bson.M{"booking_info_updated_on": time.Now()}},
 					)
 					if err != nil || updateResult.ModifiedCount != 1 {
-						log.Printf("Failed to update document CNo: %v", doc["cno"])
+						log.Printf("Failed to update document CNo: %v\n", doc["cno"])
 					} else {
 						successCount++
-						log.Printf("%d/%d - CNo: %v updated successfully", docIndex, totalDocs, doc["cno"])
+						logs.SuccessLog.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
 					}
 				}
 			}
@@ -96,19 +95,17 @@ func UpdateBookingConsignment() error {
 			"successDocs":   successCount,
 		}
 		if _, err := db.Collection("main_server_update").InsertOne(context.Background(), bson.M(stat)); err != nil {
-			log.Printf("Failed to insert stats for customer %s: %v", customerCode, err)
+			logs.ErrorLog.Printf("Failed to insert stats for customer %s: %v\n", customerCode, err)
+			continue
 		}
 	}
 	return nil
 }
 
 func getBookingUpdateUrl(r bson.M) map[string]interface{} {
+	config.Init()
 	configration := config.Config
-	cno, ok := r["cno"].(string)
-	if !ok {
-		log.Printf("Invalid CNo in record: %v", r)
-		return nil
-	}
+	cno := r["cno"]
 
 	dtStr, ok := r["bdate"].(string)
 	if !ok {
@@ -129,13 +126,13 @@ func getBookingUpdateUrl(r bson.M) map[string]interface{} {
 		"BDATE":     dt.Format("2006-01-02"),
 		"CONSIGNEE": r["consignee_name"],
 		"CC":        r["pc_code"],
-		"WEIGHT": func() float64 {
+		"WEIGHT": func() any {
 			if r["weight"] != nil {
 				return r["weight"].(float64)
 			}
 			return 0.100
 		}(),
-		"PIECES": func() int {
+		"PIECES": func() any {
 			if r["pieces"] != nil {
 				return r["pieces"].(int)
 			}
@@ -145,24 +142,24 @@ func getBookingUpdateUrl(r bson.M) map[string]interface{} {
 		"AMOUNT":      0,
 		"DESTINATION": r["bdes_name"],
 		"DESTN":       r["bdes"],
-		"ORIGIN":      configration["branchCode"],
-		"SENDER_MOB": func() string {
+		"ORIGIN":      configration["branchCode"].(string),
+		"SENDER_MOB": func() any {
 			if r["primary_contact_number"] != nil {
-				return r["primary_contact_number"].(string)
+				return r["primary_contact_number"]
 			}
 			return ""
 		}(),
-		"SENDER_EMAIL": func() string {
+		"SENDER_EMAIL": func() any {
 			if r["primary_contact_email"] != nil {
-				return r["primary_contact_email"].(string)
+				return r["primary_contact_email"]
 			}
 			return ""
 		}(),
 		"CUST_INVOICE":      "",
 		"CUST_INVOICEAMT":   "",
 		"FLYER_NO":          "",
-		"xmlorigin":         configration["branchCode"],
-		"id":                configration["loginId"],
+		"xmlorigin":         configration["branchCode"].(string),
+		"id":                configration["loginId"].(int16),
 		"RECIPIENT_ADDRESS": r["to_address"],
 		"RECIPIENT_MOB":     "",
 		"PINCODE":           r["pincode"],

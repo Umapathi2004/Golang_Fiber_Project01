@@ -4,6 +4,7 @@ import (
 	"GoFiber_Project01/DBConnection"
 	"GoFiber_Project01/api_request"
 	"GoFiber_Project01/config"
+	"GoFiber_Project01/logs"
 	"context"
 	"fmt"
 	"log"
@@ -23,6 +24,9 @@ func UpdateDRSTemp() error {
 		db             *mongo.Database
 		MongoClient    *mongo.Client
 	)
+	config.Init()
+	DBConnection.DBConfig()
+	logs.Logger()
 	configration := config.Config
 	db = DBConnection.DB
 	MongoClient = DBConnection.MongoClient
@@ -35,23 +39,26 @@ func UpdateDRSTemp() error {
 
 	cursor, err := db.Collection(collectionName).Find(context.TODO(), query)
 	if err != nil {
-		log.Fatal(err)
+		logs.ErrorLog.Printf("failed to find documents: %v\n", err)
+		return nil
 	}
 	defer cursor.Close(context.TODO())
 
 	var data []bson.M
 	if err = cursor.All(context.TODO(), &data); err != nil {
-		log.Fatal(err)
+		logs.ErrorLog.Printf("failed to read cursor: %v\n", err)
+		return nil
 	}
 	totalDocs = len(data)
-	fmt.Printf("Found %d docs\n", totalDocs)
+	log.Printf("Found %d docs\n", totalDocs)
 
 	for _, doc := range data {
 
 		txnID := doc["txn_id"].(string)
 		txnIDInt, err := strconv.Atoi(txnID[4:])
 		if err != nil {
-			log.Fatal(err)
+			logs.ErrorLog.Printf("failed to convert txn_id to int: %v\n", err)
+			continue
 		}
 		doc["txn_id"] = "DTRZ" + fmt.Sprintf("%07d", txnIDInt)
 
@@ -59,7 +66,7 @@ func UpdateDRSTemp() error {
 		if param != nil {
 			docIndex++
 			fmt.Printf("%d/%d - CNo:%s try to update\n", docIndex, totalDocs, doc["cno"])
-			DrsUrl, _ := configration["ptpURL"].(string)
+			DrsUrl, _ := configration["DrsUrl"].(string)
 			result := api_request.SendData("DRS", DrsUrl, param, doc)
 
 			if result["success"] == true {
@@ -67,12 +74,12 @@ func UpdateDRSTemp() error {
 					"blr_server_update": 2,
 					"txn_id":            doc["txn_id"],
 				}})
-				if err != nil {
-					log.Fatal(err)
-				}
-				if updateResult.ModifiedCount == 1 {
-					log.Printf("%d/%d - %s updated to the local DB\n", docIndex, totalDocs, doc["cno"])
+				if err != nil || updateResult.ModifiedCount != 1 {
+					log.Printf("Failed to update document: %v\n", doc["cno"])
+					continue
+				} else {
 					successCount++
+					logs.SuccessLog.Printf("%d/%d - %v updated to the local DB\n", docIndex, totalDocs, doc["cno"])
 				}
 			}
 		}
@@ -86,12 +93,13 @@ func UpdateDRSTemp() error {
 		"successDocs": successCount,
 	}
 	if _, err := db.Collection("main_server_update").InsertOne(context.Background(), bson.M(stat)); err != nil {
-		return fmt.Errorf("failed to insert stats: %v", err)
+		logs.ErrorLog.Printf("failed to insert stats: %v\n", err)
 	}
 	return nil
 }
 
 func getDrsUrlTemp(r bson.M) map[string]interface{} {
+	config.Init()
 	configration := config.Config
 	if r["cno"] == nil {
 		return nil
@@ -104,28 +112,28 @@ func getDrsUrlTemp(r bson.M) map[string]interface{} {
 
 	param := map[string]interface{}{
 		"SYS_DT":    time.Now().Format("01-02-2006"),
-		"ORIGIN":    configration["branchCode"],
-		"DESTN":     configration["branchCode"],
+		"ORIGIN":    configration["branchCode"].(string),
+		"DESTN":     configration["branchCode"].(string),
 		"SYS_TM":    time.Now().Format("15:04"),
 		"REMARKS":   "DE",
 		"DRSNO":     r["txn_id"],
 		"TYPEOFDOC": "INBOUND",
 		"POD_NO":    r["cno"],
-		"CC": func() string {
+		"CC": func() any {
 			if r["pccode"] != nil {
-				return r["pccode"].(string)
+				return r["pccode"]
 			}
 			return "PC00"
 		}(),
-		"CONSIGNEE": func() string {
+		"CONSIGNEE": func() any {
 			if r["customer_address"] != nil {
-				return r["customer_address"].(string)
+				return r["customer_address"]
 			}
 			return ""
 		}(),
-		"PHNO": func() string {
+		"PHNO": func() any {
 			if r["customer_mobile"] != nil {
-				return r["customer_mobile"].(string)
+				return r["customer_mobile"]
 			}
 			return ""
 		}(),
@@ -137,27 +145,27 @@ func getDrsUrlTemp(r bson.M) map[string]interface{} {
 		"RECPS":     "",
 		"STAMP":     "",
 		"SLNO":      1,
-		"WEIGHT": func() float64 {
+		"WEIGHT": func() any {
 			if r["weight"] != nil {
-				return r["weight"].(float64)
+				return r["weight"]
 			}
 			return 0.100
 		}(),
-		"CODAMOUNT": func() float64 {
+		"CODAMOUNT": func() any {
 			if r["cod_amount"] != nil {
-				return r["cod_amount"].(float64)
+				return r["cod_amount"]
 			}
 			return 0.00
 		}(),
-		"PIECES": func() int {
+		"PIECES": func() any {
 			if r["pieces"] != nil {
-				return r["pieces"].(int)
+				return r["pieces"]
 			}
 			return 1
 		}(),
-		"userid":    configration["branchCode"],
-		"xmlorigin": configration["branchCode"],
-		"id":        configration["loginID"],
+		"userid":    configration["branchCode"].(string),
+		"xmlorigin": configration["branchCode"].(string),
+		"id":        configration["loginID"].(int16),
 	}
 	return param
 }

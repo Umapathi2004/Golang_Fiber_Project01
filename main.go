@@ -33,7 +33,7 @@ func main() {
 	case "out_mft_fix":
 		services.Fixes()
 	default:
-		fmt.Println("Invalid Service")
-		logs.ErrorLog.Println("Invalid Service")
+		fmt.Printf("Invalid Service %v\n", Service)
+		logs.ErrorLog.Printf("Invalid Service %v\n", Service)
 	}
 }
