@@ -1,12 +1,14 @@
 package main
 
 import (
+	"GoFiber_Project01/logs"
 	"GoFiber_Project01/services"
 	"fmt"
 	"os"
 )
 
 func main() {
+	logs.Logger()
 	Service := os.Args[1]
 
 	switch Service {
@@ -26,7 +28,12 @@ func main() {
 		services.UpdateDRSTemp()
 	case "in_mft":
 		services.UpdateInCommingManifest()
+	case "out_mft":
+		services.UpdateOutCommingManifest()
+	case "out_mft_fix":
+		services.Fixes()
 	default:
 		fmt.Println("Invalid Service")
+		logs.ErrorLog.Println("Invalid Service")
 	}
 }
