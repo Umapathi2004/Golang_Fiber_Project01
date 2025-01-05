@@ -19,12 +19,16 @@ func UpdateOutCommingManifest() error {
 		docIndex       int
 		totalDocs      int
 	)
-	logs.Logger()
-	config.Init()
-	DBConnection.DBConfig()
-	configration := config.Config
-	db := DBConnection.DB
-	MongoClient := DBConnection.MongoClient
+	SuccessLog, ErrorLog := logs.Logger()
+	configration := config.Init()
+	db, MongoClient, err := DBConnection.InitMongoDB()
+	if err != nil {
+		log.Printf("Error Connected to MongoDB: %v\n", err)
+		return nil
+	}
+	// configration := config.Config
+	// db := DBConnection.DB
+	// MongoClient := DBConnection.MongoClient
 	defer MongoClient.Disconnect(context.Background())
 	successCount := 0
 
@@ -36,14 +40,14 @@ func UpdateOutCommingManifest() error {
 
 	cursor, err := db.Collection(collectionName).Find(context.Background(), query)
 	if err != nil {
-		logs.ErrorLog.Printf("failed to query documents: %v\n", err)
+		ErrorLog.Printf("failed to query documents: %v\n", err)
 		return nil
 	}
 	defer cursor.Close(context.Background())
 
 	var data []bson.M
 	if err := cursor.All(context.Background(), &data); err != nil {
-		logs.ErrorLog.Printf("failed to parse documents: %v\n", err)
+		ErrorLog.Printf("failed to parse documents: %v\n", err)
 		return nil
 	}
 	totalDocs = len(data)
@@ -66,12 +70,15 @@ func UpdateOutCommingManifest() error {
 						"blr_server_update": 1,
 					},
 				})
-				if err != nil || updateResult.ModifiedCount != 1 {
-					log.Printf("Failed to update document: %v", doc["cno"])
+				if err != nil {
+					ErrorLog.Printf("Error Failed to update document CNo: %v\n", doc["cno"])
 					continue
-				} else {
+
+				}
+				if updateResult.ModifiedCount == 1 {
 					successCount++
-					logs.SuccessLog.Printf("%d/%d - %v updated to the local DB", docIndex, totalDocs, doc["cno"])
+					log.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
+					SuccessLog.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
 				}
 			}
 		}
@@ -84,14 +91,13 @@ func UpdateOutCommingManifest() error {
 		"successDocs": successCount,
 	}
 	if _, err := db.Collection("main_server_update").InsertOne(context.Background(), bson.M(stat)); err != nil {
-		logs.ErrorLog.Printf("failed to insert stats: %v\n", err)
+		ErrorLog.Printf("failed to insert stats: %v\n", err)
 	}
 	return nil
 }
 
 func getOutComeMftUrl(r bson.M) map[string]interface{} {
-	config.Init()
-	configration := config.Config
+	configration := config.Init()
 	dt, err := time.Parse("2006-01-02T15:04:05.000Z", r["created_on"].(string))
 	if err != nil {
 		fmt.Println(err)

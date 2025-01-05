@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -15,10 +16,14 @@ func Fixes() error {
 		docIndex       int
 		totalDocs      int
 	)
-	logs.Logger()
-	DBConnection.DBConfig()
-	db := DBConnection.DB
-	MongoClient := DBConnection.MongoClient
+	SuccessLog, ErrorLog := logs.Logger()
+	db, MongoClient, err := DBConnection.InitMongoDB()
+	if err != nil {
+		log.Printf("Error Connected to MongoDB: %v\n", err)
+		return nil
+	}
+	// db := DBConnection.DB
+	// MongoClient := DBConnection.MongoClient
 	defer MongoClient.Disconnect(context.Background())
 	successCount := 0
 	query := bson.M{
@@ -27,14 +32,14 @@ func Fixes() error {
 	}
 	cursor, err := db.Collection(collectionName).Find(context.TODO(), query)
 	if err != nil {
-		logs.ErrorLog.Printf("failed to query documents: %v\n", err)
+		ErrorLog.Printf("failed to query documents: %v\n", err)
 		return nil
 	}
 	defer cursor.Close(context.TODO())
 
 	var data []bson.M
 	if err = cursor.All(context.TODO(), &data); err != nil {
-		logs.ErrorLog.Printf("failed to parse documents: %v\n", err)
+		ErrorLog.Printf("failed to parse documents: %v\n", err)
 		return nil
 	}
 
@@ -46,7 +51,7 @@ func Fixes() error {
 		var mft bson.M
 		err := db.Collection("out_mft").FindOne(context.TODO(), bson.M{"_id": txnID}).Decode(&mft)
 		if err != nil {
-			logs.ErrorLog.Printf("failed to find mft for txn_id: %v\n", txnID)
+			ErrorLog.Printf("failed to find mft for txn_id: %v\n", txnID)
 			continue
 		}
 
@@ -55,12 +60,15 @@ func Fixes() error {
 			bson.M{"_id": doc["_id"]},
 			bson.M{"$set": bson.M{"mdes": mft["to_des"]}},
 		)
-		if err != nil || updateResult.ModifiedCount != 1 {
-			log.Printf("Failed to update document: %v", doc["cno"])
+		if err != nil {
+			ErrorLog.Printf("Error Failed to update document CNo: %v\n", doc["cno"])
 			continue
-		} else {
+
+		}
+		if updateResult.ModifiedCount == 1 {
 			successCount++
-			logs.SuccessLog.Printf("%d/%d - %v updated to the local DB", docIndex, totalDocs, doc["cno"])
+			log.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
+			SuccessLog.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
 		}
 	}
 

@@ -9,11 +9,11 @@ import (
 
 var Config map[string]interface{}
 
-func Init() {
-	logs.Logger()
+func Init() map[string]interface{} {
+	_, ErrorLog := logs.Logger()
 	err := godotenv.Load(".env")
 	if err != nil {
-		logs.ErrorLog.Printf("Error loading .env file\n")
+		ErrorLog.Printf("Error loading .env file\n")
 	}
 
 	Base_URL := os.Getenv("BASE_URL")
@@ -28,4 +28,5 @@ func Init() {
 		"backLogDays":      3,
 		"loginId":          5024,
 	}
+	return Config
 }

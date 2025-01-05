@@ -1,8 +1,2 @@
-ERROR: 2025/01/03 12:44:41 main.go:37: Invalid Service
-ERROR: 2025/01/03 12:45:33 main.go:37: Invalid Service
-ERROR: 2025/01/03 13:10:11 main.go:37: Invalid Servicehi
-ERROR: 2025/01/03 18:35:25 DBConnection.go:41: MONGO_DB_CONNECTION_URL and MONGO_DB_NAME must be set in the environment variables
-ERROR: 2025/01/03 18:35:26 DBConnection.go:48: Error connecting to MongoDB: error parsing uri: scheme must be "mongodb" or "mongodb+srv"
-ERROR: 2025/01/03 18:39:02 DBConnection.go:41: MONGO_DB_CONNECTION_URL and MONGO_DB_NAME must be set in the environment variables
-ERROR: 2025/01/03 18:39:02 DBConnection.go:73: MSSQL connection parameters must be set in the environment variables
-ERROR: 2025/01/03 18:39:02 DBConnection.go:87: Failed to ping MSSQL: unable to open tcp connection with host 'localhost:1433': dial tcp 127.0.0.1:1433: connectex: No connection could be made because the target machine actively refused it.
+ERROR: 2025/01/04 22:04:21 DBConnection.go:45: MONGO_DB_CONNECTION_URL and MONGO_DB_NAME must be set in the environment variables
+ERROR: 2025/01/04 22:04:21 DBConnection.go:52: Error connecting to MongoDB: error parsing uri: scheme must be "mongodb" or "mongodb+srv"

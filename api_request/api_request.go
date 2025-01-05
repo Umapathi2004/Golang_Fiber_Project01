@@ -17,10 +17,10 @@ import (
 )
 
 func SendData(action string, url_ string, param map[string]interface{}, doc bson.M) map[string]interface{} {
-	logs.Logger()
-	DBConnection.DBConfig()
-	db := DBConnection.DB
-	MongoClient := DBConnection.MongoClient
+	SuccessLog, ErrorLog := logs.Logger()
+	db, MongoClient, _ := DBConnection.InitMongoDB()
+	// db := DBConnection.DB
+	// MongoClient := DBConnection.MongoClient
 	defer MongoClient.Disconnect(context.Background())
 
 	u, err := url.Parse(url_)
@@ -47,7 +47,7 @@ func SendData(action string, url_ string, param map[string]interface{}, doc bson
 
 		result := docs.Find("#lblResult").Text()
 		if strings.Contains(result, "Successfully") {
-			logs.SuccessLog.Printf("%s - %s : updated to BLR server\n", action, doc["cno"])
+			SuccessLog.Printf("%s - %s : updated to BLR server\n", action, doc["cno"])
 			return map[string]interface{}{"success": true, "path": ""}
 		}
 	}
@@ -71,16 +71,16 @@ func SendData(action string, url_ string, param map[string]interface{}, doc bson
 	collection := db.Collection("blr_server_error")
 	_, err = collection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
-		logs.ErrorLog.Printf("Error updating MongoDB: %v\n", err)
+		ErrorLog.Printf("Error updating MongoDB: %v\n", err)
 	}
 
-	logs.ErrorLog.Printf("%s - CNO: %s error: Failed to find success message\n", action, doc["cno"])
+	ErrorLog.Printf("%s - CNO: %s error: Failed to find success message\n", action, doc["cno"])
 	return map[string]interface{}{"success": false, "path": ""}
 }
 
 func handleError(action string, doc bson.M, err error, param bson.M) map[string]interface{} {
-	logs.Logger()
-	DBConnection.DBConfig()
+	_, ErrorLog := logs.Logger()
+	DBConnection.InitMongoDB()
 	db := DBConnection.DB
 	MongoClient := DBConnection.MongoClient
 	defer func() {
@@ -108,9 +108,9 @@ func handleError(action string, doc bson.M, err error, param bson.M) map[string]
 	collection := db.Collection("blr_server_error")
 	_, dbErr := collection.UpdateOne(context.TODO(), filter, update, opts)
 	if dbErr != nil {
-		logs.ErrorLog.Printf("Error updating MongoDB: %v", dbErr)
+		ErrorLog.Printf("Error updating MongoDB: %v", dbErr)
 	}
 
-	logs.ErrorLog.Printf("%s - CNO: %s error: %v\n", action, doc["cno"], err)
+	ErrorLog.Printf("%s - CNO: %s error: %v\n", action, doc["cno"], err)
 	return map[string]interface{}{"success": false, "path": ""}
 }

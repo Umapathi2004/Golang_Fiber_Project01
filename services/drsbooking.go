@@ -7,6 +7,7 @@ import (
 	"GoFiber_Project01/logs"
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -20,13 +21,17 @@ func UpdateBookingDRS() error {
 		totalDocs      int
 		successCount   int
 	)
-	logs.Logger()
-	config.Init()
-	DBConnection.DBConfig()
+	SuccessLog, ErrorLog := logs.Logger()
+	configration := config.Init()
+	db, MongoClient, err := DBConnection.InitMongoDB()
+	if err != nil {
+		log.Printf("Error Connected to MongoDB: %v\n", err)
+		return nil
+	}
 	cutOffDate := time.Date(2023, 4, 1, 0, 0, 0, 0, time.UTC)
-	configration := config.Config
-	db := DBConnection.DB
-	MongoClient := DBConnection.MongoClient
+	// configration := config.Config
+	// db := DBConnection.DB
+	// MongoClient := DBConnection.MongoClient
 	defer MongoClient.Disconnect(context.Background())
 
 	query := mongo.Pipeline{
@@ -65,14 +70,14 @@ func UpdateBookingDRS() error {
 
 	cursor, err := db.Collection(collectionName).Aggregate(context.Background(), query)
 	if err != nil {
-		logs.ErrorLog.Printf("failed to query documents: %v\n", err)
+		ErrorLog.Printf("failed to query documents: %v\n", err)
 		return nil
 	}
 	defer cursor.Close(context.TODO())
 
 	var data []bson.M
 	if err = cursor.All(context.TODO(), &data); err != nil {
-		logs.ErrorLog.Printf("failed to parse documents: %v\n", err)
+		ErrorLog.Printf("failed to parse documents: %v\n", err)
 		return nil
 	}
 
@@ -96,9 +101,9 @@ func UpdateBookingDRS() error {
 	if len(bulkUpdateOps) > 0 {
 		updateResult, err := db.Collection("in_consignment").BulkWrite(context.TODO(), bulkUpdateOps)
 		if err != nil {
-			logs.ErrorLog.Printf("Error updating documents: %v\n", err)
+			ErrorLog.Printf("Error updating documents: %v\n", err)
 		} else {
-			logs.SuccessLog.Printf("%d documents updated to the local DB\n", updateResult.ModifiedCount)
+			SuccessLog.Printf("%d documents updated to the local DB\n", updateResult.ModifiedCount)
 		}
 	}
 
@@ -111,14 +116,13 @@ func UpdateBookingDRS() error {
 	}
 
 	if _, err := db.Collection("main_server_update").InsertOne(context.Background(), bson.M(stat)); err != nil {
-		logs.ErrorLog.Printf("failed to insert stats: %v", err)
+		ErrorLog.Printf("failed to insert stats: %v", err)
 	}
 	return nil
 }
 
 func getDrsBookingUrl(r bson.M) map[string]interface{} {
-	config.Init()
-	configration := config.Config
+	configration := config.Init()
 	if r["cno"] == nil {
 		return nil
 	}

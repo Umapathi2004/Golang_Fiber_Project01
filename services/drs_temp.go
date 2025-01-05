@@ -24,12 +24,16 @@ func UpdateDRSTemp() error {
 		db             *mongo.Database
 		MongoClient    *mongo.Client
 	)
-	config.Init()
-	DBConnection.DBConfig()
-	logs.Logger()
-	configration := config.Config
-	db = DBConnection.DB
-	MongoClient = DBConnection.MongoClient
+	configration := config.Init()
+	db, MongoClient, err := DBConnection.InitMongoDB()
+	if err != nil {
+		log.Printf("Error Connected to MongoDB: %v\n", err)
+		return nil
+	}
+	SuccessLog, ErrorLog := logs.Logger()
+	// configration := config.Config
+	// db = DBConnection.DB
+	// MongoClient = DBConnection.MongoClient
 	defer MongoClient.Disconnect(context.Background())
 
 	query := bson.D{
@@ -39,14 +43,14 @@ func UpdateDRSTemp() error {
 
 	cursor, err := db.Collection(collectionName).Find(context.TODO(), query)
 	if err != nil {
-		logs.ErrorLog.Printf("failed to find documents: %v\n", err)
+		ErrorLog.Printf("failed to find documents: %v\n", err)
 		return nil
 	}
 	defer cursor.Close(context.TODO())
 
 	var data []bson.M
 	if err = cursor.All(context.TODO(), &data); err != nil {
-		logs.ErrorLog.Printf("failed to read cursor: %v\n", err)
+		ErrorLog.Printf("failed to read cursor: %v\n", err)
 		return nil
 	}
 	totalDocs = len(data)
@@ -57,7 +61,7 @@ func UpdateDRSTemp() error {
 		txnID := doc["txn_id"].(string)
 		txnIDInt, err := strconv.Atoi(txnID[4:])
 		if err != nil {
-			logs.ErrorLog.Printf("failed to convert txn_id to int: %v\n", err)
+			ErrorLog.Printf("failed to convert txn_id to int: %v\n", err)
 			continue
 		}
 		doc["txn_id"] = "DTRZ" + fmt.Sprintf("%07d", txnIDInt)
@@ -74,12 +78,15 @@ func UpdateDRSTemp() error {
 					"blr_server_update": 2,
 					"txn_id":            doc["txn_id"],
 				}})
-				if err != nil || updateResult.ModifiedCount != 1 {
-					log.Printf("Failed to update document: %v\n", doc["cno"])
+				if err != nil {
+					ErrorLog.Printf("Error Failed to update document CNo: %v\n", doc["cno"])
 					continue
-				} else {
+
+				}
+				if updateResult.ModifiedCount == 1 {
 					successCount++
-					logs.SuccessLog.Printf("%d/%d - %v updated to the local DB\n", docIndex, totalDocs, doc["cno"])
+					log.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
+					SuccessLog.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
 				}
 			}
 		}
@@ -93,14 +100,13 @@ func UpdateDRSTemp() error {
 		"successDocs": successCount,
 	}
 	if _, err := db.Collection("main_server_update").InsertOne(context.Background(), bson.M(stat)); err != nil {
-		logs.ErrorLog.Printf("failed to insert stats: %v\n", err)
+		ErrorLog.Printf("failed to insert stats: %v\n", err)
 	}
 	return nil
 }
 
 func getDrsUrlTemp(r bson.M) map[string]interface{} {
-	config.Init()
-	configration := config.Config
+	configration := config.Init()
 	if r["cno"] == nil {
 		return nil
 	}

@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	logs.Logger()
+	_, ErrorLog := logs.Logger()
 	Service := os.Args[1]
 
 	switch Service {
@@ -34,6 +34,6 @@ func main() {
 		services.Fixes()
 	default:
 		fmt.Printf("Invalid Service %v\n", Service)
-		logs.ErrorLog.Printf("Invalid Service %v\n", Service)
+		ErrorLog.Printf("Invalid Service %v\n", Service)
 	}
 }

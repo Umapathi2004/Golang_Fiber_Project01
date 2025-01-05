@@ -20,13 +20,22 @@ func UpdatePTP_MAA() error {
 		totalDocs      int
 		successCount   int
 	)
-	logs.Logger()
-	config.Init()
-	DBConnection.DBConfig()
-	configration := config.Config
-	db := DBConnection.DB
-	MongoClient := DBConnection.MongoClient
-	sqldb := DBConnection.Sqldb
+	SuccessLog, ErrorLog := logs.Logger()
+	configration := config.Init()
+	db, MongoClient, err := DBConnection.InitMongoDB()
+	if err != nil {
+		log.Printf("Error Connected to MongoDB: %v\n", err)
+		return nil
+	}
+	sqldb, err := DBConnection.InitMSSQL()
+	if err != nil {
+		log.Printf("Error Connected to MSSQL %v\n", err)
+		return nil
+	}
+	// configration := config.Config
+	// db := DBConnection.DB
+	// MongoClient := DBConnection.MongoClient
+	// sqldb := DBConnection.Sqldb
 	defer sqldb.Close()
 	defer MongoClient.Disconnect(context.Background())
 	successCount = 0
@@ -39,14 +48,14 @@ func UpdatePTP_MAA() error {
 
 	cursor, err := db.Collection(collectionName).Find(context.Background(), query)
 	if err != nil {
-		logs.ErrorLog.Printf("failed to query documents: %v\n", err)
+		ErrorLog.Printf("failed to query documents: %v\n", err)
 		return nil
 	}
 	defer cursor.Close(context.Background())
 
 	var data []bson.M
 	if err := cursor.All(context.Background(), &data); err != nil {
-		logs.ErrorLog.Printf("failed to parse documents: %v", err)
+		ErrorLog.Printf("failed to parse documents: %v", err)
 		return nil
 	}
 	totalDocs = len(data)
@@ -59,12 +68,15 @@ func UpdatePTP_MAA() error {
 		result := insertPTPDetails(sqldb, doc)
 		if result == nil {
 			updateResult, err := db.Collection(collectionName).UpdateOne(context.Background(), bson.M{"_id": doc["_id"]}, bson.M{"$set": bson.M{"maa_server_update": 1}})
-			if err != nil || updateResult.ModifiedCount != 1 {
-				log.Printf("Failed to update document: %v\n", doc["cno"])
+			if err != nil {
+				ErrorLog.Printf("Error Failed to update document CNo: %v\n", doc["cno"])
 				continue
-			} else {
+
+			}
+			if updateResult.ModifiedCount == 1 {
 				successCount++
-				logs.SuccessLog.Printf("%d/%d - %v updated to the local DB\n", docIndex, totalDocs, doc["cno"])
+				log.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
+				SuccessLog.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
 			}
 		}
 	}
@@ -77,14 +89,14 @@ func UpdatePTP_MAA() error {
 		"successDocs": successCount,
 	}
 	if _, err := db.Collection("main_server_update").InsertOne(context.Background(), bson.M(stat)); err != nil {
-		logs.ErrorLog.Printf("failed to insert stats: %v\n", err)
+		ErrorLog.Printf("failed to insert stats: %v\n", err)
 	}
 	return nil
 }
 
 func insertPTPDetails(sqldb *sql.DB, r bson.M) error {
-	config.Init()
-	configration := config.Config
+	_, ErrorLog := logs.Logger()
+	configration := config.Init()
 	origin, ok := r["cno"].(string)
 	if !ok || len(origin) < 3 {
 		return fmt.Errorf("invalid CNo format: %v", r["cno"])
@@ -133,7 +145,7 @@ func insertPTPDetails(sqldb *sql.DB, r bson.M) error {
 	)
 
 	if err != nil {
-		logs.ErrorLog.Printf("Failed to execute MSSQL command: %v\n", err)
+		ErrorLog.Printf("Failed to execute MSSQL command: %v\n", err)
 		return fmt.Errorf("failed to execute MSSQL command: %w", err)
 	}
 	return nil

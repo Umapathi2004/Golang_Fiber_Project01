@@ -1,7 +1,6 @@
 package logs
 
 import (
-	"fmt"
 	"log"
 
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -12,7 +11,7 @@ var (
 	ErrorLog   *log.Logger
 )
 
-func Logger() {
+func Logger() (*log.Logger, *log.Logger) {
 	successLogger := &lumberjack.Logger{
 		Filename:   "./logs/success.log",
 		MaxSize:    5,
@@ -31,5 +30,6 @@ func Logger() {
 
 	SuccessLog = log.New(successLogger, "SUCCESS: ", log.Ldate|log.Ltime|log.Lshortfile)
 	ErrorLog = log.New(errorLogger, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
-	fmt.Println("Logger initialized")
+	// fmt.Println("Logger initialized")
+	return SuccessLog, ErrorLog
 }

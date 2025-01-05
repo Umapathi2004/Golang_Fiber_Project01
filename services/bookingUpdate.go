@@ -25,19 +25,22 @@ func UpdateBookingConsignment() error {
 		totalDocs      int
 		successCount   int
 	)
-	logs.Logger()
-	config.Init()
-	DBConnection.DBConfig()
-	configration := config.Config
-	db := DBConnection.DB
-	MongoClient := DBConnection.MongoClient
+	SuccessLog, ErrorLog := logs.Logger()
+	db, MongoClient, err := DBConnection.InitMongoDB()
+	configration := config.Init()
+	if err != nil {
+		log.Printf("Error Connected to MongoDB: %v\n", err)
+		return nil
+	}
+	// db := DBConnection.DB
+	// MongoClient := DBConnection.MongoClient
 	defer MongoClient.Disconnect(context.Background())
 
 	for _, customerCode := range customerCodes {
 		query := bson.M{"_id": customerCode}
 
 		if err := db.Collection("customer").FindOne(context.Background(), query).Decode(&customer); err != nil {
-			logs.ErrorLog.Printf("Error finding customer with code %s: %v\n", customerCode, err)
+			ErrorLog.Printf("Error finding customer with code %s: %v\n", customerCode, err)
 			continue
 		}
 
@@ -49,14 +52,14 @@ func UpdateBookingConsignment() error {
 
 		cursor, err := db.Collection(collectionName).Find(context.Background(), query)
 		if err != nil {
-			logs.ErrorLog.Printf("Error finding documents for customer %s: %v\n", customerCode, err)
+			ErrorLog.Printf("Error finding documents for customer %s: %v\n", customerCode, err)
 			continue
 		}
 		defer cursor.Close(context.Background())
 
 		var data []bson.M
 		if err := cursor.All(context.Background(), &data); err != nil {
-			logs.ErrorLog.Printf("Error reading cursor for customer %s: %v\n", customerCode, err)
+			ErrorLog.Printf("Error reading cursor for customer %s: %v\n", customerCode, err)
 			continue
 		}
 		totalDocs = len(data)
@@ -76,11 +79,15 @@ func UpdateBookingConsignment() error {
 						bson.M{"_id": doc["_id"]},
 						bson.M{"$set": bson.M{"booking_info_updated_on": time.Now()}},
 					)
-					if err != nil || updateResult.ModifiedCount != 1 {
-						log.Printf("Failed to update document CNo: %v\n", doc["cno"])
-					} else {
+					if err != nil {
+						ErrorLog.Printf("Error Failed to update document CNo: %v\n", doc["cno"])
+						continue
+
+					}
+					if updateResult.ModifiedCount == 1 {
 						successCount++
-						logs.SuccessLog.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
+						log.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
+						SuccessLog.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
 					}
 				}
 			}
@@ -95,7 +102,7 @@ func UpdateBookingConsignment() error {
 			"successDocs":   successCount,
 		}
 		if _, err := db.Collection("main_server_update").InsertOne(context.Background(), bson.M(stat)); err != nil {
-			logs.ErrorLog.Printf("Failed to insert stats for customer %s: %v\n", customerCode, err)
+			ErrorLog.Printf("Failed to insert stats for customer %s: %v\n", customerCode, err)
 			continue
 		}
 	}
@@ -103,8 +110,7 @@ func UpdateBookingConsignment() error {
 }
 
 func getBookingUpdateUrl(r bson.M) map[string]interface{} {
-	config.Init()
-	configration := config.Config
+	configration := config.Init()
 	cno := r["cno"]
 
 	dtStr, ok := r["bdate"].(string)
