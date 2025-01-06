@@ -98,7 +98,7 @@ func InitMSSQL() (*sql.DB, error) {
 		ErrorLog.Printf("Failed to ping MSSQL: %v\n", err)
 		return nil, err
 	}
-
+	log.Printf("Connected to MSSQL successfully")
 	SuccessLog.Println("Connected to MSSQL successfully!")
 	return Sqldb, nil
 }
