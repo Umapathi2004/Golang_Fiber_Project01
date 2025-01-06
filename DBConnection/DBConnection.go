@@ -38,7 +38,7 @@ func InitMongoDB() (*mongo.Database, *mongo.Client, error) {
 		ErrorLog.Printf("Error loading .env file: %v\n", err)
 	}
 
-	uri := os.Getenv("MONGO_DB_CONNECTION_URL")
+	uri := os.Getenv("MONGO_DB_CONNECTION_URI")
 	dbName := os.Getenv("MONGO_DB_NAME")
 
 	if uri == "" || dbName == "" {
