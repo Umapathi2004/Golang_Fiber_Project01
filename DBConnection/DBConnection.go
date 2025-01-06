@@ -33,7 +33,7 @@ var (
 // }
 
 func InitMongoDB() (*mongo.Database, *mongo.Client, error) {
-	_, ErrorLog := logs.Logger()
+	SuccuseLog, ErrorLog := logs.Logger()
 	if err := godotenv.Load(); err != nil {
 		ErrorLog.Printf("Error loading .env file: %v\n", err)
 	}
@@ -62,12 +62,13 @@ func InitMongoDB() (*mongo.Database, *mongo.Client, error) {
 	}
 
 	DB = MongoClient.Database(dbName)
-	log.Println("Connected to MongoDB successfully")
+	log.Printf("Connected to MongoDB successfully")
+	SuccuseLog.Println("Connected to MongoDB successfully")
 	return DB, MongoClient, nil
 }
 
 func InitMSSQL() (*sql.DB, error) {
-	_, ErrorLog := logs.Logger()
+	SuccessLog, ErrorLog := logs.Logger()
 	if err := godotenv.Load(); err != nil {
 		ErrorLog.Printf("Error loading .env file: %v\n", err)
 	}
@@ -98,6 +99,6 @@ func InitMSSQL() (*sql.DB, error) {
 		return nil, err
 	}
 
-	log.Println("Connected to MSSQL successfully!")
+	SuccessLog.Println("Connected to MSSQL successfully!")
 	return Sqldb, nil
 }
