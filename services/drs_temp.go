@@ -36,9 +36,9 @@ func UpdateDRSTemp() error {
 	// MongoClient = DBConnection.MongoClient
 	defer MongoClient.Disconnect(context.Background())
 
-	query := bson.D{
-		{Key: "txn", Value: "drs"},
-		{Key: "blr_server_update", Value: 1},
+	query := bson.M{
+		"txn":               "drs",
+		"blr_server_update": 1,
 	}
 
 	cursor, err := db.Collection(collectionName).Find(context.TODO(), query)

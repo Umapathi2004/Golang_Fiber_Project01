@@ -130,17 +130,17 @@ func getBookingUpdateUrl(r bson.M) map[string]interface{} {
 		"REF_NO":    "",
 		"CLIENT":    "TRZPAL101",
 		"BDATE":     dt.Format("2006-01-02"),
-		"CONSIGNEE": r["consignee_name"],
+		"CONSIGNEE": r["customer_name"],
 		"CC":        r["pc_code"],
 		"WEIGHT": func() any {
-			if r["weight"] != nil {
-				return r["weight"].(float64)
+			if r["bweight"] != nil {
+				return r["bweight"]
 			}
 			return 0.100
 		}(),
 		"PIECES": func() any {
-			if r["pieces"] != nil {
-				return r["pieces"].(int)
+			if r["bpieces"] != nil {
+				return r["bpieces"]
 			}
 			return 1
 		}(),

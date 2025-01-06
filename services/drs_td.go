@@ -69,7 +69,7 @@ func UpdateDrsTd() error {
 			docIndex = idx + 1
 			log.Printf("%d/%d - CNo: %v try to update", docIndex, totalDocs, doc["cno"])
 
-			drsTdUrl, _ := configration["drsTdUrl"].(string)
+			drsTdUrl := configration["drsTdUrl"].(string)
 
 			result := api_request.SendData("DRS-TD", drsTdUrl, param, doc)
 			if result["success"] == true {

@@ -129,9 +129,9 @@ func insertPTPDetails(sqldb *sql.DB, r bson.M) error {
 		sql.Named("tload", 1),
 		sql.Named("PTime", dt.Format("15:04")),
 		sql.Named("opcode", configration["branchCode"].(string)),
-		sql.Named("weight", func() any {
+		sql.Named("weight", func() float32 {
 			if r["weight"] != nil {
-				return r["weight"]
+				return r["weight"].(float32)
 			}
 			return 0.100
 		}()),

@@ -54,21 +54,23 @@ func Fixes() error {
 			ErrorLog.Printf("failed to find mft for txn_id: %v\n", txnID)
 			continue
 		}
+		if mft != nil {
+			updateResult, err := db.Collection(collectionName).UpdateOne(
+				context.TODO(),
+				bson.M{"_id": doc["_id"]},
+				bson.M{"$set": bson.M{"mdes": mft["to_des"]}},
+			)
 
-		updateResult, err := db.Collection(collectionName).UpdateOne(
-			context.TODO(),
-			bson.M{"_id": doc["_id"]},
-			bson.M{"$set": bson.M{"mdes": mft["to_des"]}},
-		)
-		if err != nil {
-			ErrorLog.Printf("Error Failed to update document CNo: %v\n", doc["cno"])
-			continue
+			if err != nil {
+				ErrorLog.Printf("Error Failed to update document CNo: %v\n", doc["cno"])
+				continue
 
-		}
-		if updateResult.ModifiedCount == 1 {
-			successCount++
-			log.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
-			SuccessLog.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
+			}
+			if updateResult.ModifiedCount == 1 {
+				successCount++
+				log.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
+				SuccessLog.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
+			}
 		}
 	}
 
