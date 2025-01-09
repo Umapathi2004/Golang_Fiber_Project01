@@ -1,4 +1,0 @@
-ERROR: 2025/01/04 22:04:21 DBConnection.go:45: MONGO_DB_CONNECTION_URL and MONGO_DB_NAME must be set in the environment variables
-ERROR: 2025/01/04 22:04:21 DBConnection.go:52: Error connecting to MongoDB: error parsing uri: scheme must be "mongodb" or "mongodb+srv"
-ERROR: 2025/01/06 12:37:27 DBConnection.go:83: MSSQL connection parameters must be set in the environment variables
-ERROR: 2025/01/06 12:37:28 DBConnection.go:98: Failed to ping MSSQL: unable to open tcp connection with host 'localhost:1433': dial tcp 127.0.0.1:1433: connectex: No connection could be made because the target machine actively refused it.

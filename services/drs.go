@@ -4,13 +4,14 @@ import (
 	"GoFiber_Project01/DBConnection"
 	"GoFiber_Project01/api_request"
 	"GoFiber_Project01/config"
+	"GoFiber_Project01/helpers"
 	"GoFiber_Project01/logs"
 	"context"
+	"fmt"
 	"log"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func UpdateDRS() error {
@@ -19,7 +20,7 @@ func UpdateDRS() error {
 		docIndex       int
 		totalDocs      int
 	)
-	SuccessLog, ErrorLog := logs.Logger()
+	_, ErrorLog := logs.Logger()
 	configration := config.Init()
 	db, MongoClient, err := DBConnection.InitMongoDB()
 	if err != nil {
@@ -97,40 +98,41 @@ func UpdateDRS() error {
 
 			drsURL, _ := configration["drsUrl"].(string)
 			result := api_request.SendData("DRS", drsURL, param, doc)
-			if result["success"] == true {
-				updateResult, err := db.Collection(collectionName).UpdateOne(context.Background(), bson.M{"_id": doc["_id"]}, bson.M{
-					"$set": bson.M{
-						"blr_server_update":     1,
-						"blr_server_updated_on": time.Now(),
-					},
-				})
-				if err != nil {
-					ErrorLog.Printf("Error Failed to update document CNo: %v\n", doc["cno"])
-					continue
+			fmt.Println(result)
+			// if result["success"] == true {
+			// 	updateResult, err := db.Collection(collectionName).UpdateOne(context.Background(), bson.M{"_id": doc["_id"]}, bson.M{
+			// 		"$set": bson.M{
+			// 			"blr_server_update":     1,
+			// 			"blr_server_updated_on": time.Now(),
+			// 		},
+			// 	})
+			// 	if err != nil {
+			// 		ErrorLog.Printf("Error Failed to update document CNo: %v\n", doc["cno"])
+			// 		continue
 
-				}
-				if updateResult.ModifiedCount == 1 {
-					successCount++
-					log.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
-					SuccessLog.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
-				}
-			} else {
-				retry := 0
-				if docRetry, ok := doc["blr_server_retry"].(int); ok {
-					retry = docRetry
-				}
-				_, err = db.Collection(collectionName).UpdateOne(context.Background(), bson.M{"_id": doc["_id"]}, bson.M{
-					"$set": bson.M{
-						"blr_server_retry":            retry + 1,
-						"blr_server_retry_updated_on": time.Now(),
-					}},
-					options.Update().SetUpsert(true),
-				)
-				if err != nil {
-					ErrorLog.Printf("Failed to update document: %v\n", doc["cno"])
-					continue
-				}
-			}
+			// 	}
+			// 	if updateResult.ModifiedCount == 1 {
+			// 		successCount++
+			// 		log.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
+			// 		SuccessLog.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
+			// 	}
+			// } else {
+			// 	retry := 0
+			// 	if docRetry, ok := doc["blr_server_retry"].(int); ok {
+			// 		retry = docRetry
+			// 	}
+			// 	_, err = db.Collection(collectionName).UpdateOne(context.Background(), bson.M{"_id": doc["_id"]}, bson.M{
+			// 		"$set": bson.M{
+			// 			"blr_server_retry":            retry + 1,
+			// 			"blr_server_retry_updated_on": time.Now(),
+			// 		}},
+			// 		options.Update().SetUpsert(true),
+			// 	)
+			// 	if err != nil {
+			// 		ErrorLog.Printf("Failed to update document: %v\n", doc["cno"])
+			// 		continue
+			// 	}
+			// }
 		}
 	}
 
@@ -141,9 +143,10 @@ func UpdateDRS() error {
 		"totalDocs":   totalDocs,
 		"successDocs": successCount,
 	}
-	if _, err := db.Collection("main_server_update").InsertOne(context.Background(), bson.M(stat)); err != nil {
-		ErrorLog.Printf("failed to insert stats: %v\n", err)
-	}
+	// if _, err := db.Collection("main_server_update").InsertOne(context.Background(), bson.M(stat)); err != nil {
+	// 	ErrorLog.Printf("failed to insert stats: %v\n", err)
+	// }
+	fmt.Println(stat)
 	return nil
 }
 
@@ -153,9 +156,9 @@ func getDrsUrl(r bson.M) map[string]interface{} {
 		return nil
 	}
 
-	dt, err := time.Parse("2006-01-02T15:04:05.000Z", r["updated_on"].(string))
-	if err != nil {
-		log.Println(err)
+	err, dt := helpers.StringToDateConverter(r["updated_on"])
+	if err {
+		fmt.Println(err)
 		return nil
 	}
 
@@ -214,7 +217,7 @@ func getDrsUrl(r bson.M) map[string]interface{} {
 		}(),
 		"userid":    configration["branchCode"].(string),
 		"xmlorigin": configration["branchCode"].(string),
-		"id":        configration["loginId"].(int16),
+		"id":        configration["loginId"],
 	}
 
 	return param

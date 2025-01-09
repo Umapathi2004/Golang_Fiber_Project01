@@ -4,8 +4,10 @@ import (
 	"GoFiber_Project01/DBConnection"
 	"GoFiber_Project01/api_request"
 	"GoFiber_Project01/config"
+	"GoFiber_Project01/helpers"
 	"GoFiber_Project01/logs"
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -28,7 +30,7 @@ func UpdateDrsTd() error {
 		log.Printf("Error Connected to MongoDB: %v\n", err)
 		return nil
 	}
-	SuccessLog, ErrorLog := logs.Logger()
+	_, ErrorLog := logs.Logger()
 	// configration = config.Config
 	// db = DBConnection.DB
 	// MongoClient := DBConnection.MongoClient
@@ -72,22 +74,23 @@ func UpdateDrsTd() error {
 			drsTdUrl := configration["drsTdUrl"].(string)
 
 			result := api_request.SendData("DRS-TD", drsTdUrl, param, doc)
-			if result["success"] == true {
-				updateResult, err := db.Collection(collectionName).UpdateOne(
-					context.TODO(),
-					bson.M{"_id": doc["_id"]},
-					bson.M{"$set": bson.M{"blr_server_td_update": 1}})
-				if err != nil {
-					ErrorLog.Printf("Error Failed to update document CNo: %v\n", doc["cno"])
-					continue
+			fmt.Println(result)
+			// if result["success"] == true {
+			// 	updateResult, err := db.Collection(collectionName).UpdateOne(
+			// 		context.TODO(),
+			// 		bson.M{"_id": doc["_id"]},
+			// 		bson.M{"$set": bson.M{"blr_server_td_update": 1}})
+			// 	if err != nil {
+			// 		ErrorLog.Printf("Error Failed to update document CNo: %v\n", doc["cno"])
+			// 		continue
 
-				}
-				if updateResult.ModifiedCount == 1 {
-					successCount++
-					log.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
-					SuccessLog.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
-				}
-			}
+			// 	}
+			// 	if updateResult.ModifiedCount == 1 {
+			// 		successCount++
+			// 		log.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
+			// 		SuccessLog.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
+			// 	}
+			// }
 		}
 	}
 	stat := map[string]interface{}{
@@ -97,9 +100,10 @@ func UpdateDrsTd() error {
 		"totalDocs":   totalDocs,
 		"successDocs": successCount,
 	}
-	if _, err := db.Collection("main_server_update").InsertOne(context.Background(), bson.M(stat)); err != nil {
-		ErrorLog.Printf("failed to insert stats: %v\n", err)
-	}
+	// if _, err := db.Collection("main_server_update").InsertOne(context.Background(), bson.M(stat)); err != nil {
+	// 	ErrorLog.Printf("failed to insert stats: %v\n", err)
+	// }
+	fmt.Println(stat)
 	return nil
 }
 
@@ -108,12 +112,16 @@ func getDrsTdUrl(r bson.M) map[string]interface{} {
 	if r["cno"] == nil {
 		return nil
 	}
-
-	dt, err := time.Parse("2006-01-02T15:04:05.000Z", r["updated_on"].(string))
-	if err != nil {
-		log.Println(err)
+	err, dt := helpers.StringToDateConverter(r["updated_on"])
+	if err {
+		fmt.Println(err)
 		return nil
 	}
+	// dt, err := time.Parse("2006-01-02T15:04:05.000Z", r["updated_on"].(string))
+	// if err != nil {
+	// 	log.Println(err)
+	// 	return nil
+	// }
 
 	param := map[string]interface{}{
 		"SYS_DT":    dt.Format("01-02-2006"),
@@ -163,7 +171,7 @@ func getDrsTdUrl(r bson.M) map[string]interface{} {
 		}(),
 		"userid":    configration["branchCode"].(string),
 		"xmlorigin": configration["branchCode"].(string),
-		"id":        configration["loginId"].(int16),
+		"id":        configration["loginId"],
 	}
 
 	return param

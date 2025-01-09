@@ -4,6 +4,7 @@ import (
 	"GoFiber_Project01/DBConnection"
 	"GoFiber_Project01/api_request"
 	"GoFiber_Project01/config"
+	"GoFiber_Project01/helpers"
 	"GoFiber_Project01/logs"
 	"context"
 	"fmt"
@@ -11,7 +12,6 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func UpdateInCommingManifest() error {
@@ -20,7 +20,7 @@ func UpdateInCommingManifest() error {
 		docIndex       int
 		totalDocs      int
 	)
-	SuccessLog, ErrorLog := logs.Logger()
+	_, ErrorLog := logs.Logger()
 	configration := config.Init()
 	db, MongoClient, err := DBConnection.InitMongoDB()
 	if err != nil {
@@ -78,40 +78,41 @@ func UpdateInCommingManifest() error {
 
 			manifestUrl, _ := configration["manifestUrl"].(string)
 			result := api_request.SendData("IN-MFT", manifestUrl, param, doc)
-			if result["success"] == true {
-				updateResult, err := db.Collection(collectionName).UpdateOne(context.Background(), bson.M{"_id": doc["_id"]}, bson.M{
-					"$set": bson.M{
-						"blr_server_update":     1,
-						"blr_server_updated_on": time.Now(),
-					},
-				})
-				if err != nil {
-					ErrorLog.Printf("Error Failed to update document CNo: %v\n", doc["cno"])
-					continue
+			fmt.Println(result)
+			// if result["success"] == true {
+			// 	updateResult, err := db.Collection(collectionName).UpdateOne(context.Background(), bson.M{"_id": doc["_id"]}, bson.M{
+			// 		"$set": bson.M{
+			// 			"blr_server_update":     1,
+			// 			"blr_server_updated_on": time.Now(),
+			// 		},
+			// 	})
+			// 	if err != nil {
+			// 		ErrorLog.Printf("Error Failed to update document CNo: %v\n", doc["cno"])
+			// 		continue
 
-				}
-				if updateResult.ModifiedCount == 1 {
-					successCount++
-					log.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
-					SuccessLog.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
-				}
-			} else {
-				retry := 0
-				if docRetry, ok := doc["blr_server_retry"].(int); ok {
-					retry = docRetry
-				}
-				_, err = db.Collection(collectionName).UpdateOne(context.Background(), bson.M{"_id": doc["_id"]}, bson.M{
-					"$set": bson.M{
-						"blr_server_retry":            retry + 1,
-						"blr_server_retry_updated_on": time.Now(),
-					}},
-					options.Update().SetUpsert(true),
-				)
-				if err != nil {
-					ErrorLog.Printf("Failed to update document: %v\n", doc["cno"])
-					continue
-				}
-			}
+			// 	}
+			// 	if updateResult.ModifiedCount == 1 {
+			// 		successCount++
+			// 		log.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
+			// 		SuccessLog.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
+			// 	}
+			// } else {
+			// 	retry := 0
+			// 	if docRetry, ok := doc["blr_server_retry"].(int); ok {
+			// 		retry = docRetry
+			// 	}
+			// 	_, err = db.Collection(collectionName).UpdateOne(context.Background(), bson.M{"_id": doc["_id"]}, bson.M{
+			// 		"$set": bson.M{
+			// 			"blr_server_retry":            retry + 1,
+			// 			"blr_server_retry_updated_on": time.Now(),
+			// 		}},
+			// 		options.Update().SetUpsert(true),
+			// 	)
+			// 	if err != nil {
+			// 		ErrorLog.Printf("Failed to update document: %v\n", doc["cno"])
+			// 		continue
+			// 	}
+			// }
 		}
 	}
 
@@ -122,17 +123,18 @@ func UpdateInCommingManifest() error {
 		"totalDocs":   totalDocs,
 		"successDocs": successCount,
 	}
-	if _, err := db.Collection("main_server_update").InsertOne(context.Background(), bson.M(stat)); err != nil {
-		ErrorLog.Printf("failed to insert stats: %v", err)
-	}
+	// if _, err := db.Collection("main_server_update").InsertOne(context.Background(), bson.M(stat)); err != nil {
+	// 	ErrorLog.Printf("failed to insert stats: %v", err)
+	// }
+	fmt.Println(stat)
 	return nil
 }
 
 func getInComeMftUrl(r bson.M) map[string]interface{} {
 	configration := config.Init()
 	orgin := r["cno"].(string)[:3]
-	dt, err := time.Parse("2006-01-02T15:04:05.000Z", r["created_on"].(string))
-	if err != nil {
+	err, dt := helpers.StringToDateConverter(r["created_on"])
+	if err {
 		fmt.Println(err)
 		return nil
 	}
@@ -163,7 +165,7 @@ func getInComeMftUrl(r bson.M) map[string]interface{} {
 		"VEHICELNO": "",
 		"userid":    configration["branchCode"].(string),
 		"XMLORIGIN": configration["branchCode"].(string),
-		"id":        configration["loginID"].(int16),
+		"id":        configration["loginId"],
 	}
 
 	return param

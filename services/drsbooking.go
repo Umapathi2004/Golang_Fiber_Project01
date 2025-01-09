@@ -4,6 +4,7 @@ import (
 	"GoFiber_Project01/DBConnection"
 	"GoFiber_Project01/api_request"
 	"GoFiber_Project01/config"
+	"GoFiber_Project01/helpers"
 	"GoFiber_Project01/logs"
 	"context"
 	"fmt"
@@ -21,7 +22,7 @@ func UpdateBookingDRS() error {
 		totalDocs      int
 		successCount   int
 	)
-	SuccessLog, ErrorLog := logs.Logger()
+	_, ErrorLog := logs.Logger()
 	configration := config.Init()
 	db, MongoClient, err := DBConnection.InitMongoDB()
 	if err != nil {
@@ -83,7 +84,7 @@ func UpdateBookingDRS() error {
 
 	totalDocs = len(data)
 	fmt.Printf("Founded %d docs\n", totalDocs)
-	var bulkUpdateOps []mongo.WriteModel
+	// var bulkUpdateOps []mongo.WriteModel
 
 	for _, doc := range data {
 		param := getDrsBookingUrl(doc)
@@ -92,20 +93,21 @@ func UpdateBookingDRS() error {
 			fmt.Printf("%d/%d - CNo:%s try to update\n", docIndex, totalDocs, doc["cno"])
 
 			result := api_request.SendData("DRS-BK", configration["drsUrl"].(string), param, doc)
-			if result["success"] == true {
-				bulkUpdateOps = append(bulkUpdateOps, mongo.NewUpdateOneModel().SetFilter(bson.M{"_id": doc["result"].(bson.M)["_id"]}).SetUpdate(bson.M{"$set": bson.M{"blr_server_update": 1}}))
-				successCount++
-			}
+			// if result["success"] == true {
+			// 	bulkUpdateOps = append(bulkUpdateOps, mongo.NewUpdateOneModel().SetFilter(bson.M{"_id": doc["result"].(bson.M)["_id"]}).SetUpdate(bson.M{"$set": bson.M{"blr_server_update": 1}}))
+			// 	successCount++
+			// }
+			fmt.Println(result)
 		}
 	}
-	if len(bulkUpdateOps) > 0 {
-		updateResult, err := db.Collection("in_consignment").BulkWrite(context.TODO(), bulkUpdateOps)
-		if err != nil {
-			ErrorLog.Printf("Error updating documents: %v\n", err)
-		} else {
-			SuccessLog.Printf("%d documents updated to the local DB\n", updateResult.ModifiedCount)
-		}
-	}
+	// if len(bulkUpdateOps) > 0 {
+	// 	updateResult, err := db.Collection("in_consignment").BulkWrite(context.TODO(), bulkUpdateOps)
+	// 	if err != nil {
+	// 		ErrorLog.Printf("Error updating documents: %v\n", err)
+	// 	} else {
+	// 		SuccessLog.Printf("%d documents updated to the local DB\n", updateResult.ModifiedCount)
+	// 	}
+	// }
 
 	stat := bson.M{
 		"date":        time.Now(),
@@ -115,9 +117,10 @@ func UpdateBookingDRS() error {
 		"successDocs": successCount,
 	}
 
-	if _, err := db.Collection("main_server_update").InsertOne(context.Background(), bson.M(stat)); err != nil {
-		ErrorLog.Printf("failed to insert stats: %v", err)
-	}
+	// if _, err := db.Collection("main_server_update").InsertOne(context.Background(), bson.M(stat)); err != nil {
+	// 	ErrorLog.Printf("failed to insert stats: %v", err)
+	// }
+	fmt.Println(stat)
 	return nil
 }
 
@@ -127,8 +130,8 @@ func getDrsBookingUrl(r bson.M) map[string]interface{} {
 		return nil
 	}
 
-	dt, err := time.Parse("2006-01-02T15:04:05.000Z", r["updated_on"].(string))
-	if err != nil {
+	err, dt := helpers.StringToDateConverter(r["updated_on"])
+	if err {
 		fmt.Println(err)
 		return nil
 	}
@@ -183,7 +186,7 @@ func getDrsBookingUrl(r bson.M) map[string]interface{} {
 		}(),
 		"userid":    configration["branchCode"].(string),
 		"xmlorigin": configration["branchCode"].(string),
-		"id":        configration["loginId"].(int16),
+		"id":        configration["loginId"],
 	}
 
 	return param

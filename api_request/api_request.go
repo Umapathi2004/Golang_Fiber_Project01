@@ -1,11 +1,8 @@
 package api_request
 
 import (
-	"GoFiber_Project01/DBConnection"
 	"GoFiber_Project01/logs"
-	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -18,10 +15,10 @@ import (
 
 func SendData(action string, url_ string, param map[string]interface{}, doc bson.M) map[string]interface{} {
 	SuccessLog, ErrorLog := logs.Logger()
-	db, MongoClient, _ := DBConnection.InitMongoDB()
-	// db := DBConnection.DB
-	// MongoClient := DBConnection.MongoClient
-	defer MongoClient.Disconnect(context.Background())
+	// db, MongoClient, _ := DBConnection.InitMongoDB()
+	// // db := DBConnection.DB
+	// // MongoClient := DBConnection.MongoClient
+	// defer MongoClient.Disconnect(context.Background())
 
 	u, err := url.Parse(url_)
 	if err != nil {
@@ -34,6 +31,7 @@ func SendData(action string, url_ string, param map[string]interface{}, doc bson
 	u.RawQuery = q.Encode()
 
 	resp, err := http.Get(u.String())
+	fmt.Println(u.String(), "temp") //temp
 	if err != nil {
 		return handleError(action, doc, err, param)
 	}
@@ -68,11 +66,12 @@ func SendData(action string, url_ string, param map[string]interface{}, doc bson
 	}
 	filter := bson.M{"_id": doc["cno"], "txn": action}
 	opts := options.Update().SetUpsert(true)
-	collection := db.Collection("blr_server_error")
-	_, err = collection.UpdateOne(context.TODO(), filter, update, opts)
-	if err != nil {
-		ErrorLog.Printf("Error updating MongoDB: %v\n", err)
-	}
+	// collection := db.Collection("blr_server_error")
+	// _, err = collection.UpdateOne(context.TODO(), filter, update, opts)
+	// if err != nil {
+	// 	ErrorLog.Printf("Error updating MongoDB: %v\n", err)
+	// }
+	fmt.Println(update, filter, opts)
 
 	ErrorLog.Printf("%s - CNO: %s error: Failed to find success message\n", action, doc["cno"])
 	return map[string]interface{}{"success": false, "path": ""}
@@ -80,14 +79,14 @@ func SendData(action string, url_ string, param map[string]interface{}, doc bson
 
 func handleError(action string, doc bson.M, err error, param bson.M) map[string]interface{} {
 	_, ErrorLog := logs.Logger()
-	DBConnection.InitMongoDB()
-	db := DBConnection.DB
-	MongoClient := DBConnection.MongoClient
-	defer func() {
-		if err := MongoClient.Disconnect(context.Background()); err != nil {
-			log.Printf("Error disconnecting MongoClient: %v", err)
-		}
-	}()
+	// DBConnection.InitMongoDB()
+	// db := DBConnection.DB
+	// MongoClient := DBConnection.MongoClient
+	// defer func() {
+	// 	if err := MongoClient.Disconnect(context.Background()); err != nil {
+	// 		log.Printf("Error disconnecting MongoClient: %v", err)
+	// 	}
+	// }()
 
 	retry := 0
 	if val, ok := doc["blr_server_retry"].(int); ok {
@@ -105,12 +104,12 @@ func handleError(action string, doc bson.M, err error, param bson.M) map[string]
 	}
 	filter := bson.M{"_id": doc["cno"], "txn": action}
 	opts := options.Update().SetUpsert(true)
-	collection := db.Collection("blr_server_error")
-	_, dbErr := collection.UpdateOne(context.TODO(), filter, update, opts)
-	if dbErr != nil {
-		ErrorLog.Printf("Error updating MongoDB: %v", dbErr)
-	}
-
+	// collection := db.Collection("blr_server_error")
+	// _, dbErr := collection.UpdateOne(context.TODO(), filter, update, opts)
+	// if dbErr != nil {
+	// 	ErrorLog.Printf("Error updating MongoDB: %v", dbErr)
+	// }
+	fmt.Println(update, filter, opts)
 	ErrorLog.Printf("%s - CNO: %s error: %v\n", action, doc["cno"], err)
 	return map[string]interface{}{"success": false, "path": ""}
 }

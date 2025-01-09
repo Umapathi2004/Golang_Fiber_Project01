@@ -2,8 +2,8 @@ package services
 
 import (
 	"GoFiber_Project01/DBConnection"
-	"GoFiber_Project01/api_request"
 	"GoFiber_Project01/config"
+	"GoFiber_Project01/helpers"
 	"GoFiber_Project01/logs"
 	"context"
 	"fmt"
@@ -19,7 +19,7 @@ func UpdateOutCommingManifest() error {
 		docIndex       int
 		totalDocs      int
 	)
-	SuccessLog, ErrorLog := logs.Logger()
+	_, ErrorLog := logs.Logger()
 	configration := config.Init()
 	db, MongoClient, err := DBConnection.InitMongoDB()
 	if err != nil {
@@ -63,24 +63,25 @@ func UpdateOutCommingManifest() error {
 			log.Printf("%d/%d - CNo: %v try to update", docIndex, totalDocs, doc["cno"])
 
 			manifestUrl, _ := configration["manifestUrl"].(string)
-			result := api_request.SendData("OUT-MFT", manifestUrl, param, doc)
-			if result["success"] == true {
-				updateResult, err := db.Collection(collectionName).UpdateOne(context.Background(), bson.M{"_id": doc["_id"]}, bson.M{
-					"$set": bson.M{
-						"blr_server_update": 1,
-					},
-				})
-				if err != nil {
-					ErrorLog.Printf("Error Failed to update document CNo: %v\n", doc["cno"])
-					continue
+			fmt.Println(manifestUrl)
+			// result := api_request.SendData("OUT-MFT", manifestUrl, param, doc)
+			// if result["success"] == true {
+			// 	updateResult, err := db.Collection(collectionName).UpdateOne(context.Background(), bson.M{"_id": doc["_id"]}, bson.M{
+			// 		"$set": bson.M{
+			// 			"blr_server_update": 1,
+			// 		},
+			// 	})
+			// 	if err != nil {
+			// 		ErrorLog.Printf("Error Failed to update document CNo: %v\n", doc["cno"])
+			// 		continue
 
-				}
-				if updateResult.ModifiedCount == 1 {
-					successCount++
-					log.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
-					SuccessLog.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
-				}
-			}
+			// 	}
+			// 	if updateResult.ModifiedCount == 1 {
+			// 		successCount++
+			// 		log.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
+			// 		SuccessLog.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
+			// 	}
+			// }
 		}
 	}
 	stat := map[string]interface{}{
@@ -90,20 +91,20 @@ func UpdateOutCommingManifest() error {
 		"totalDocs":   totalDocs,
 		"successDocs": successCount,
 	}
-	if _, err := db.Collection("main_server_update").InsertOne(context.Background(), bson.M(stat)); err != nil {
-		ErrorLog.Printf("failed to insert stats: %v\n", err)
-	}
+	// if _, err := db.Collection("main_server_update").InsertOne(context.Background(), bson.M(stat)); err != nil {
+	// 	ErrorLog.Printf("failed to insert stats: %v\n", err)
+	// }
+	fmt.Println(stat)
 	return nil
 }
 
 func getOutComeMftUrl(r bson.M) map[string]interface{} {
 	configration := config.Init()
-	dt, err := time.Parse("2006-01-02T15:04:05.000Z", r["created_on"].(string))
-	if err != nil {
+	err, dt := helpers.StringToDateConverter(r["created_on"])
+	if err {
 		fmt.Println(err)
 		return nil
 	}
-
 	param := map[string]interface{}{
 		"SYS_DT":    dt.Format("01-02-2006"),
 		"ORIGIN":    configration["branchCode"].(string),
@@ -135,7 +136,7 @@ func getOutComeMftUrl(r bson.M) map[string]interface{} {
 		"VEHICELNO": "",
 		"userid":    configration["branchCode"].(string),
 		"XMLORIGIN": configration["branchCode"].(string),
-		"id":        configration["loginID"].(int16),
+		"id":        configration["loginId"],
 	}
 
 	return param

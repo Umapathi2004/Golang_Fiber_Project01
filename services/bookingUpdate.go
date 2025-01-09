@@ -4,18 +4,24 @@ import (
 	"GoFiber_Project01/DBConnection"
 	"GoFiber_Project01/api_request"
 	"GoFiber_Project01/config"
+	"GoFiber_Project01/helpers"
 	"GoFiber_Project01/logs"
 	"context"
+	"fmt"
 	"log"
+	"os"
+	"strings"
 	"time"
+
+	"github.com/joho/godotenv"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
 
 var (
-	customerCodes = []string{"PAL101", "KRM209", "TAB742"}
-	customer      = make(map[string]interface{})
-	cutOffDate    = time.Date(2023, 4, 1, 0, 0, 0, 0, time.UTC)
+	// customerCodes = []string{"PAL101", "KRM209", "TAB742"}
+	customer   = make(map[string]interface{})
+	cutOffDate = time.Date(2023, 4, 1, 0, 0, 0, 0, time.UTC)
 )
 
 func UpdateBookingConsignment() error {
@@ -25,7 +31,7 @@ func UpdateBookingConsignment() error {
 		totalDocs      int
 		successCount   int
 	)
-	SuccessLog, ErrorLog := logs.Logger()
+	_, ErrorLog := logs.Logger()
 	db, MongoClient, err := DBConnection.InitMongoDB()
 	configration := config.Init()
 	if err != nil {
@@ -35,6 +41,13 @@ func UpdateBookingConsignment() error {
 	// db := DBConnection.DB
 	// MongoClient := DBConnection.MongoClient
 	defer MongoClient.Disconnect(context.Background())
+	errenv := godotenv.Load()
+	if errenv != nil {
+		ErrorLog.Println("Error loading .env file")
+		return nil
+	}
+
+	customerCodes := strings.Split(os.Getenv("customerCodes"), ",")
 
 	for _, customerCode := range customerCodes {
 		query := bson.M{"_id": customerCode}
@@ -73,23 +86,24 @@ func UpdateBookingConsignment() error {
 				bookingUpdateUrl, _ := configration["bookingUpdateUrl"].(string)
 
 				result := api_request.SendData("Booking Info", bookingUpdateUrl, param, doc)
-				if result["success"] == true {
-					updateResult, err := db.Collection(collectionName).UpdateOne(
-						context.Background(),
-						bson.M{"_id": doc["_id"]},
-						bson.M{"$set": bson.M{"booking_info_updated_on": time.Now()}},
-					)
-					if err != nil {
-						ErrorLog.Printf("Error Failed to update document CNo: %v\n", doc["cno"])
-						continue
+				fmt.Println(result)
+				// 	if result["success"] == true {
+				// 		updateResult, err := db.Collection(collectionName).UpdateOne(
+				// 			context.Background(),
+				// 			bson.M{"_id": doc["_id"]},
+				// 			bson.M{"$set": bson.M{"booking_info_updated_on": time.Now()}},
+				// 		)
+				// 		if err != nil {
+				// 			ErrorLog.Printf("Error Failed to update document CNo: %v\n", doc["cno"])
+				// 			continue
 
-					}
-					if updateResult.ModifiedCount == 1 {
-						successCount++
-						log.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
-						SuccessLog.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
-					}
-				}
+				// 		}
+				// 		if updateResult.ModifiedCount == 1 {
+				// 			successCount++
+				// 			log.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
+				// 			SuccessLog.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
+				// 		}
+				// 	}
 			}
 		}
 
@@ -101,10 +115,11 @@ func UpdateBookingConsignment() error {
 			"totalDocs":     totalDocs,
 			"successDocs":   successCount,
 		}
-		if _, err := db.Collection("main_server_update").InsertOne(context.Background(), bson.M(stat)); err != nil {
-			ErrorLog.Printf("Failed to insert stats for customer %s: %v\n", customerCode, err)
-			continue
-		}
+		// if _, err := db.Collection("main_server_update").InsertOne(context.Background(), bson.M(stat)); err != nil {
+		// 	ErrorLog.Printf("Failed to insert stats for customer %s: %v\n", customerCode, err)
+		// 	continue
+		// }
+		fmt.Println(stat)
 	}
 	return nil
 }
@@ -112,18 +127,22 @@ func UpdateBookingConsignment() error {
 func getBookingUpdateUrl(r bson.M) map[string]interface{} {
 	configration := config.Init()
 	cno := r["cno"]
-
-	dtStr, ok := r["bdate"].(string)
-	if !ok {
-		log.Printf("Invalid created_on field in record: %v", r)
+	err, dt := helpers.StringToDateConverter(r["bdate"])
+	if err {
+		fmt.Println(err)
 		return nil
 	}
+	// dtStr, ok := r["bdate"].(string)
+	// if !ok {
+	// 	log.Printf("Invalid created_on field in record: %v", r)
+	// 	return nil
+	// }
 
-	dt, err := time.Parse(time.RFC3339, dtStr)
-	if err != nil {
-		log.Printf("Error parsing created_on for CNo %s: %v", cno, err)
-		return nil
-	}
+	// dt, err := time.Parse(time.RFC3339, dtStr)
+	// if err != nil {
+	// 	log.Printf("Error parsing created_on for CNo %s: %v", cno, err)
+	// 	return nil
+	// }
 
 	sample := map[string]interface{}{
 		"POD_NO":    cno,
@@ -165,7 +184,7 @@ func getBookingUpdateUrl(r bson.M) map[string]interface{} {
 		"CUST_INVOICEAMT":   "",
 		"FLYER_NO":          "",
 		"xmlorigin":         configration["branchCode"].(string),
-		"id":                configration["loginId"].(int16),
+		"id":                configration["loginId"],
 		"RECIPIENT_ADDRESS": r["to_address"],
 		"RECIPIENT_MOB":     "",
 		"PINCODE":           r["pincode"],

@@ -4,13 +4,14 @@ import (
 	"GoFiber_Project01/DBConnection"
 	"GoFiber_Project01/api_request"
 	"GoFiber_Project01/config"
+	"GoFiber_Project01/helpers"
 	"GoFiber_Project01/logs"
 	"context"
+	"fmt"
 	"log"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func UpdatePTP() error {
@@ -19,7 +20,7 @@ func UpdatePTP() error {
 		docIndex       int
 		totalDocs      int
 	)
-	SuccessLog, ErrorLog := logs.Logger()
+	_, ErrorLog := logs.Logger()
 	configration := config.Init()
 	db, MongoClient, err := DBConnection.InitMongoDB()
 	if err != nil {
@@ -76,42 +77,43 @@ func UpdatePTP() error {
 			docIndex = idx + 1
 			log.Printf("%d/%d - CNo: %v try to update", docIndex, totalDocs, doc["cno"])
 
-			ptpURL, _ := configration["ptpURL"].(string)
+			ptpURL, _ := configration["ptpUrl"].(string)
 			result := api_request.SendData("PTP", ptpURL, param, doc)
-			if result["success"] == true {
-				updateResult, err := db.Collection(collectionName).UpdateOne(context.Background(), bson.M{"_id": doc["_id"]}, bson.M{
-					"$set": bson.M{
-						"blr_server_update":     1,
-						"blr_server_updated_on": time.Now(),
-					},
-				})
-				if err != nil {
-					ErrorLog.Printf("Error Failed to update document CNo: %v\n", doc["cno"])
-					continue
+			fmt.Println(result)
+			// if result["success"] == true {
+			// 	updateResult, err := db.Collection(collectionName).UpdateOne(context.Background(), bson.M{"_id": doc["_id"]}, bson.M{
+			// 		"$set": bson.M{
+			// 			"blr_server_update":     1,
+			// 			"blr_server_updated_on": time.Now(),
+			// 		},
+			// 	})
+			// 	if err != nil {
+			// 		ErrorLog.Printf("Error Failed to update document CNo: %v\n", doc["cno"])
+			// 		continue
 
-				}
-				if updateResult.ModifiedCount == 1 {
-					successCount++
-					log.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
-					SuccessLog.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
-				}
-			} else {
-				retry := 0
-				if docRetry, ok := doc["blr_server_retry"].(int); ok {
-					retry = docRetry
-				}
-				_, err = db.Collection(collectionName).UpdateOne(context.Background(), bson.M{"_id": doc["_id"]}, bson.M{
-					"$set": bson.M{
-						"blr_server_retry":            retry + 1,
-						"blr_server_retry_updated_on": time.Now(),
-					}},
-					options.Update().SetUpsert(true),
-				)
-				if err != nil {
-					ErrorLog.Printf("Failed to update document: %v", doc["cno"])
-					continue
-				}
-			}
+			// 	}
+			// 	if updateResult.ModifiedCount == 1 {
+			// 		successCount++
+			// 		log.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
+			// 		SuccessLog.Printf("%d/%d - CNo: %v updated successfully\n", docIndex, totalDocs, doc["cno"])
+			// 	}
+			// } else {
+			// 	retry := 0
+			// 	if docRetry, ok := doc["blr_server_retry"].(int); ok {
+			// 		retry = docRetry
+			// 	}
+			// 	_, err = db.Collection(collectionName).UpdateOne(context.Background(), bson.M{"_id": doc["_id"]}, bson.M{
+			// 		"$set": bson.M{
+			// 			"blr_server_retry":            retry + 1,
+			// 			"blr_server_retry_updated_on": time.Now(),
+			// 		}},
+			// 		options.Update().SetUpsert(true),
+			// 	)
+			// 	if err != nil {
+			// 		ErrorLog.Printf("Failed to update document: %v", doc["cno"])
+			// 		continue
+			// 	}
+			// }
 		}
 	}
 
@@ -122,9 +124,10 @@ func UpdatePTP() error {
 		"totalDocs":   totalDocs,
 		"successDocs": successCount,
 	}
-	if _, err := db.Collection("main_server_update").InsertOne(context.Background(), bson.M(stat)); err != nil {
-		ErrorLog.Printf("failed to insert stats: %v", err)
-	}
+	// if _, err := db.Collection("main_server_update").InsertOne(context.Background(), bson.M(stat)); err != nil {
+	// 	ErrorLog.Printf("failed to insert stats: %v", err)
+	// }
+	fmt.Println(stat)
 	return nil
 }
 
@@ -136,15 +139,20 @@ func getPtpUrl(r bson.M) map[string]interface{} {
 		return nil
 	}
 
-	createdOnStr, ok := r["created_on"].(string)
-	if !ok {
-		log.Printf("Invalid created_on field in record: %v", r)
-		return nil
-	}
+	// createdOnStr, ok := r["created_on"].(string)
+	// if !ok {
+	// 	log.Printf("Invalid created_on field in record: %v", r)
+	// 	return nil
+	// }
 
-	createdOn, err := time.Parse(time.RFC3339, createdOnStr)
-	if err != nil {
-		log.Printf("Error parsing created_on for CNo %s: %v", cno, err)
+	// createdOn, err := time.Parse(time.RFC3339, createdOnStr)
+	// if err != nil {
+	// 	log.Printf("Error parsing created_on for CNo %s: %v", cno, err)
+	// 	return nil
+	// }
+	err, createdOn := helpers.StringToDateConverter(r["created_on"])
+	if err {
+		fmt.Println(err)
 		return nil
 	}
 	sample := map[string]interface{}{
@@ -179,7 +187,7 @@ func getPtpUrl(r bson.M) map[string]interface{} {
 		"VEHICELNO": "",
 		"userid":    configration["branchCode"].(string),
 		"XMLORIGIN": configration["branchCode"].(string),
-		"id":        configration["loginID"].(int16),
+		"id":        configration["loginId"],
 	}
 	return sample
 }
