@@ -1,0 +1,21 @@
+ERROR: 2025/01/09 14:52:58 DBConnection.go:60: Error pinging MongoDB: server selection error: context deadline exceeded, current topology: { Type: Single, Servers: [{ Addr: 144.126.252.173:27017, Type: Unknown, Last error: dial tcp 144.126.252.173:27017: connectex: A socket operation was attempted to an unreachable network. }, ] }
+ERROR: 2025/01/09 15:29:53 bookingUpdate.go:56: Error finding customer with code PAL101: mongo: no documents in result
+ERROR: 2025/01/09 15:29:53 bookingUpdate.go:56: Error finding customer with code KRM209: mongo: no documents in result
+ERROR: 2025/01/09 15:29:53 bookingUpdate.go:56: Error finding customer with code TAB742: mongo: no documents in result
+ERROR: 2025/01/09 16:53:35 api_request.go:76: DRS-TD - CNO: AMD29713755 error: Failed to find success message
+ERROR: 2025/01/09 16:53:35 api_request.go:76: DRS-TD - CNO: AMD29862328 error: Failed to find success message
+ERROR: 2025/01/09 16:53:36 api_request.go:76: DRS-TD - CNO: ARR30456175 error: Failed to find success message
+ERROR: 2025/01/09 16:53:36 api_request.go:76: DRS-TD - CNO: BDG530145995 error: Failed to find success message
+ERROR: 2025/01/09 16:53:37 api_request.go:76: DRS-TD - CNO: BLR415864663 error: Failed to find success message
+ERROR: 2025/01/09 16:53:38 api_request.go:76: DRS-TD - CNO: BLT100266992 error: Failed to find success message
+ERROR: 2025/01/09 16:53:38 api_request.go:76: DRS-TD - CNO: BNH621491 error: Failed to find success message
+ERROR: 2025/01/09 16:53:38 api_request.go:76: DRS-TD - CNO: BOH5237497 error: Failed to find success message
+ERROR: 2025/01/09 16:53:38 api_request.go:76: DRS-TD - CNO: CDM10223321 error: Failed to find success message
+ERROR: 2025/01/09 16:53:39 api_request.go:76: DRS-TD - CNO: CDM55296274 error: Failed to find success message
+ERROR: 2025/01/09 16:53:39 api_request.go:76: DRS-TD - CNO: CGL10041320 error: Failed to find success message
+ERROR: 2025/01/09 16:53:40 api_request.go:76: DRS-TD - CNO: CGL7025913 error: Failed to find success message
+ERROR: 2025/01/09 16:53:40 api_request.go:76: DRS-TD - CNO: CJB201681035 error: Failed to find success message
+ERROR: 2025/01/09 16:53:40 api_request.go:76: DRS-TD - CNO: CJB521017467 error: Failed to find success message
+ERROR: 2025/01/09 16:53:40 api_request.go:76: DRS-TD - CNO: CJB521119003 error: Failed to find success message
+ERROR: 2025/01/09 16:53:40 api_request.go:76: DRS-TD - CNO: CJB521134801 error: Failed to find success message
+ERROR: 2025/01/09 17:07:02 api_request.go:76: OUT-MFT - CNO: PON1403020 error: Failed to find success message

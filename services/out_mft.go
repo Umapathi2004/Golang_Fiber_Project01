@@ -2,6 +2,7 @@ package services
 
 import (
 	"GoFiber_Project01/DBConnection"
+	"GoFiber_Project01/api_request"
 	"GoFiber_Project01/config"
 	"GoFiber_Project01/helpers"
 	"GoFiber_Project01/logs"
@@ -64,7 +65,8 @@ func UpdateOutCommingManifest() error {
 
 			manifestUrl, _ := configration["manifestUrl"].(string)
 			fmt.Println(manifestUrl)
-			// result := api_request.SendData("OUT-MFT", manifestUrl, param, doc)
+			result := api_request.SendData("OUT-MFT", manifestUrl, param, doc)
+			fmt.Println(result)
 			// if result["success"] == true {
 			// 	updateResult, err := db.Collection(collectionName).UpdateOne(context.Background(), bson.M{"_id": doc["_id"]}, bson.M{
 			// 		"$set": bson.M{

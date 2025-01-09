@@ -12,25 +12,25 @@ func main() {
 	Service := os.Args[1]
 
 	switch Service {
-	case "bookingUpdate":
+	case "bookingupdate":
 		services.UpdateBookingConsignment()
 	case "ptp":
 		services.UpdatePTP()
-	case "ptp_maa":
+	case "ptpmaa":
 		services.UpdatePTP_MAA()
-	case "drs_td":
+	case "drstd":
 		services.UpdateDrsTd()
 	case "drs":
 		services.UpdateDRS()
 	case "drsbooking":
 		services.UpdateBookingDRS()
-	case "drs_temp":
+	case "drstemp":
 		services.UpdateDRSTemp()
-	case "in_mft":
+	case "inmft":
 		services.UpdateInCommingManifest()
-	case "out_mft":
+	case "outmft":
 		services.UpdateOutCommingManifest()
-	case "out_mft_fix":
+	case "outmftfix":
 		services.Fixes()
 	default:
 		fmt.Printf("Invalid Service %v\n", Service)
