@@ -45,7 +45,10 @@ func Fixes() error {
 
 	totalDocs = len(data)
 	fmt.Printf("Found %d docs\n", totalDocs)
-
+	if totalDocs == 0 {
+		ErrorLog.Printf("Found %d docs\n", totalDocs)
+		return nil
+	}
 	for _, doc := range data {
 		txnID := doc["txn_id"]
 		var mft bson.M

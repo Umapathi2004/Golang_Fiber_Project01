@@ -56,7 +56,10 @@ func UpdateDRSTemp() error {
 	}
 	totalDocs = len(data)
 	log.Printf("Found %d docs\n", totalDocs)
-
+	if totalDocs == 0 {
+		ErrorLog.Printf("Found %d docs\n", totalDocs)
+		return nil
+	}
 	for _, doc := range data {
 
 		txnID := doc["txn_id"].(string)

@@ -84,6 +84,10 @@ func UpdateBookingDRS() error {
 
 	totalDocs = len(data)
 	fmt.Printf("Founded %d docs\n", totalDocs)
+	if totalDocs == 0 {
+		ErrorLog.Printf("Found %d docs\n", totalDocs)
+		return nil
+	}
 	// var bulkUpdateOps []mongo.WriteModel
 
 	for _, doc := range data {

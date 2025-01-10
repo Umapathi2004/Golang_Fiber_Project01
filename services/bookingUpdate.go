@@ -77,7 +77,10 @@ func UpdateBookingConsignment() error {
 		}
 		totalDocs = len(data)
 		log.Printf("Customer %s: Found %d documents", customerCode, totalDocs)
-
+		if totalDocs == 0 {
+			ErrorLog.Printf("Customer %s: Found %d documents\n", customerCode, totalDocs)
+			continue
+		}
 		for idx, doc := range data {
 			param := getBookingUpdateUrl(doc)
 			if param != nil {

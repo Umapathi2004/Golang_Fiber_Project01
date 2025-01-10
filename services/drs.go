@@ -88,7 +88,10 @@ func UpdateDRS() error {
 	}
 	totalDocs = len(data)
 	log.Printf("Found %d docs", totalDocs)
-
+	if totalDocs == 0 {
+		ErrorLog.Printf("Found %d docs\n", totalDocs)
+		return nil
+	}
 	for idx, doc := range data {
 
 		param := getDrsUrl(doc)

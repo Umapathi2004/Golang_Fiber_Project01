@@ -293,3 +293,4 @@ SUCCESS: 2025/01/09 17:07:10 api_request.go:48: OUT-MFT - PON5222596 : updated t
 SUCCESS: 2025/01/09 17:07:10 api_request.go:48: OUT-MFT - PON7313802 : updated to BLR server
 SUCCESS: 2025/01/09 17:07:10 api_request.go:48: OUT-MFT - PON5682069 : updated to BLR server
 SUCCESS: 2025/01/09 17:09:00 DBConnection.go:66: Connected to MongoDB successfully
+                                                                                   SUCCESS: 2025/01/10 10:14:45 DBConnection.go:66: Connected to MongoDB successfully
