@@ -13,7 +13,7 @@ func Init() map[string]interface{} {
 	_, ErrorLog := logs.Logger()
 	err := godotenv.Load(".env")
 	if err != nil {
-		ErrorLog.Printf("Error loading .env file\n")
+		ErrorLog.Printf("Error loading .env file: %v\n", err)
 	}
 
 	Base_URL := os.Getenv("BASE_URL")

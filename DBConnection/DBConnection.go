@@ -21,17 +21,6 @@ var (
 	Sqldb       *sql.DB
 )
 
-// func DBConfig() {
-// 	logs.Logger()
-// 	if err := godotenv.Load(); err != nil {
-// 		logs.ErrorLog.Printf("Error loading .env file: %v\n", err)
-// 	}
-
-// 	initMongoDB()
-
-// 	initMSSQL()
-// }
-
 func InitMongoDB() (*mongo.Database, *mongo.Client, error) {
 	SuccuseLog, ErrorLog := logs.Logger()
 	if err := godotenv.Load(); err != nil {
