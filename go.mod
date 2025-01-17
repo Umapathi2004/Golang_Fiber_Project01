@@ -1,6 +1,6 @@
 module GoFiber_Project01
 
-go 1.23
+go 1.20
 
 toolchain go1.23.4
 
