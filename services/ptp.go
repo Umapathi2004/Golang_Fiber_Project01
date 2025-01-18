@@ -139,17 +139,6 @@ func getPtpUrl(r bson.M) map[string]interface{} {
 		return nil
 	}
 
-	// createdOnStr, ok := r["created_on"].(string)
-	// if !ok {
-	// 	log.Printf("Invalid created_on field in record: %v", r)
-	// 	return nil
-	// }
-
-	// createdOn, err := time.Parse(time.RFC3339, createdOnStr)
-	// if err != nil {
-	// 	log.Printf("Error parsing created_on for CNo %s: %v", cno, err)
-	// 	return nil
-	// }
 	err, createdOn := helpers.StringToDateConverter(r["created_on"])
 	if err {
 		fmt.Println(err)

@@ -35,10 +35,6 @@ func UpdatePTP_MAA() error {
 	// 	log.Printf("Error Connected to MSSQL %v\n", err)
 	// 	return nil
 	// }
-	// configration := config.Config
-	// db := DBConnection.DB
-	// MongoClient := DBConnection.MongoClient
-	// sqldb := DBConnection.Sqldb
 	// defer sqldb.Close()
 	defer MongoClient.Disconnect(context.Background())
 	successCount = 0

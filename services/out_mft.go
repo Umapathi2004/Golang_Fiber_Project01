@@ -27,9 +27,6 @@ func UpdateOutCommingManifest() error {
 		log.Printf("Error Connected to MongoDB: %v\n", err)
 		return nil
 	}
-	// configration := config.Config
-	// db := DBConnection.DB
-	// MongoClient := DBConnection.MongoClient
 	defer MongoClient.Disconnect(context.Background())
 	successCount := 0
 

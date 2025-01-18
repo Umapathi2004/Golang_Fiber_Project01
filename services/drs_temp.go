@@ -32,9 +32,6 @@ func UpdateDRSTemp() error {
 		return nil
 	}
 	_, ErrorLog := logs.Logger()
-	// configration := config.Config
-	// db = DBConnection.DB
-	// MongoClient = DBConnection.MongoClient
 	defer MongoClient.Disconnect(context.Background())
 
 	query := bson.M{
@@ -115,11 +112,6 @@ func getDrsUrlTemp(r bson.M) map[string]interface{} {
 	if r["cno"] == nil {
 		return nil
 	}
-	// dt, err := time.Parse("2006-01-02T15:04:05.000Z", r["updated_on"].(string))
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return nil
-	// }
 	err, dt := helpers.StringToDateConverter(r["updated_on"])
 	if err {
 		fmt.Println(err)

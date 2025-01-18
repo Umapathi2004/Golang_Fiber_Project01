@@ -19,7 +19,6 @@ import (
 )
 
 var (
-	// customerCodes = []string{"PAL101", "KRM209", "TAB742"}
 	customer   = make(map[string]interface{})
 	cutOffDate = time.Date(2023, 4, 1, 0, 0, 0, 0, time.UTC)
 )
@@ -38,8 +37,6 @@ func UpdateBookingConsignment() error {
 		log.Printf("Error Connected to MongoDB: %v\n", err)
 		return nil
 	}
-	// db := DBConnection.DB
-	// MongoClient := DBConnection.MongoClient
 	defer MongoClient.Disconnect(context.Background())
 	errenv := godotenv.Load()
 	if errenv != nil {
@@ -135,18 +132,6 @@ func getBookingUpdateUrl(r bson.M) map[string]interface{} {
 		fmt.Println(err)
 		return nil
 	}
-	// dtStr, ok := r["bdate"].(string)
-	// if !ok {
-	// 	log.Printf("Invalid created_on field in record: %v", r)
-	// 	return nil
-	// }
-
-	// dt, err := time.Parse(time.RFC3339, dtStr)
-	// if err != nil {
-	// 	log.Printf("Error parsing created_on for CNo %s: %v", cno, err)
-	// 	return nil
-	// }
-
 	sample := map[string]interface{}{
 		"POD_NO":    cno,
 		"REF_NO":    "",

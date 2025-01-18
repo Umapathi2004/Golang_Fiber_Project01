@@ -16,8 +16,6 @@ import (
 func SendData(action string, url_ string, param map[string]interface{}, doc bson.M) map[string]interface{} {
 	SuccessLog, ErrorLog := logs.Logger()
 	// db, MongoClient, _ := DBConnection.InitMongoDB()
-	// // db := DBConnection.DB
-	// // MongoClient := DBConnection.MongoClient
 	// defer MongoClient.Disconnect(context.Background())
 
 	u, err := url.Parse(url_)

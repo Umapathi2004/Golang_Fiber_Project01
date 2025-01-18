@@ -30,9 +30,7 @@ func UpdateBookingDRS() error {
 		return nil
 	}
 	cutOffDate := time.Date(2023, 4, 1, 0, 0, 0, 0, time.UTC)
-	// configration := config.Config
-	// db := DBConnection.DB
-	// MongoClient := DBConnection.MongoClient
+	
 	defer MongoClient.Disconnect(context.Background())
 
 	query := mongo.Pipeline{

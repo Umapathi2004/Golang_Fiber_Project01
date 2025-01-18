@@ -22,7 +22,6 @@ func UpdateDrsTd() error {
 		totalDocs      int
 		successCount   int
 		db             *mongo.Database
-		// configration   map[string]interface{}
 	)
 	configration := config.Init()
 	db, MongoClient, err := DBConnection.InitMongoDB()
@@ -31,9 +30,6 @@ func UpdateDrsTd() error {
 		return nil
 	}
 	_, ErrorLog := logs.Logger()
-	// configration = config.Config
-	// db = DBConnection.DB
-	// MongoClient := DBConnection.MongoClient
 	defer MongoClient.Disconnect(context.Background())
 
 	query := bson.M{
@@ -120,11 +116,6 @@ func getDrsTdUrl(r bson.M) map[string]interface{} {
 		fmt.Println(err)
 		return nil
 	}
-	// dt, err := time.Parse("2006-01-02T15:04:05.000Z", r["updated_on"].(string))
-	// if err != nil {
-	// 	log.Println(err)
-	// 	return nil
-	// }
 
 	param := map[string]interface{}{
 		"SYS_DT":    dt.Format("01-02-2006"),

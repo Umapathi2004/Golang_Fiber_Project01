@@ -13,7 +13,7 @@ import (
 func Fixes() error {
 	var (
 		collectionName = "booking_consignment"
-		// docIndex       int
+		docIndex       int
 		totalDocs int
 	)
 	_, ErrorLog := logs.Logger()
@@ -50,6 +50,7 @@ func Fixes() error {
 		return nil
 	}
 	for _, doc := range data {
+		docIndex++
 		txnID := doc["txn_id"]
 		var mft bson.M
 		err := db.Collection("out_mft").FindOne(context.TODO(), bson.M{"_id": txnID}).Decode(&mft)
