@@ -1,7 +1,7 @@
 package DBConnection
 
 import (
-	"GoFiber_Project01/logs"
+	"Blr_server_update/logs"
 	"context"
 	"database/sql"
 	"fmt"

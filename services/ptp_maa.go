@@ -1,11 +1,11 @@
 package services
 
 import (
-	"GoFiber_Project01/DBConnection"
-	"GoFiber_Project01/config"
+	"Blr_server_update/DBConnection"
+	"Blr_server_update/config"
 
-	// "GoFiber_Project01/helpers"
-	"GoFiber_Project01/logs"
+	// "Blr_server_update/helpers"
+	"Blr_server_update/logs"
 	"context"
 
 	// "database/sql"

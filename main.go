@@ -1,8 +1,8 @@
 package main
 
 import (
-	"GoFiber_Project01/logs"
-	"GoFiber_Project01/services"
+	"Blr_server_update/logs"
+	"Blr_server_update/services"
 	"fmt"
 	"os"
 )

@@ -1,7 +1,7 @@
 package config
 
 import (
-	"GoFiber_Project01/logs"
+	"Blr_server_update/logs"
 	"os"
 
 	"github.com/joho/godotenv"

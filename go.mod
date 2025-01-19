@@ -1,4 +1,4 @@
-module GoFiber_Project01
+module Blr_server_update
 
 go 1.23
 

@@ -1,7 +1,7 @@
 package api_request
 
 import (
-	"GoFiber_Project01/logs"
+	"Blr_server_update/logs"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -29,7 +29,7 @@ func SendData(action string, url_ string, param map[string]interface{}, doc bson
 	u.RawQuery = q.Encode()
 
 	resp, err := http.Get(u.String())
-	fmt.Println(u.String(), "temp") //temp
+	// fmt.Println(u.String(), "temp") //temp
 	if err != nil {
 		return handleError(action, doc, err, param)
 	}
